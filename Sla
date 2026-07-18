@@ -1,6 +1,6 @@
--- NovaUI Config Manxager (Executor-ready)
-if getgenv().NovaUILoaded then return end
-getgenv().NovaUILoaded = true
+-- Aether Config Manager UI (Executor-ready)
+if getgenv().AetherUILoaded then return end
+getgenv().AetherUILoaded = true
 
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
@@ -15,12 +15,12 @@ local FS = {writefile = writefile, readfile = readfile, isfile = isfile, isfolde
 
 local function ensureExecutorFS()
     for name, fn in pairs(FS) do
-        if type(fn) ~= "function" then if name ~= "delfile" then error("NovaUI requires executor file APIs. Missing: " .. name) end end
+        if type(fn) ~= "function" then if name ~= "delfile" then error("Aether requires executor file APIs. Missing: " .. name) end end
     end
 end
 ensureExecutorFS()
 
-local ROOT_FOLDER = "NovaUI"
+local ROOT_FOLDER = "AetherUI"
 local GAMES_FOLDER = ROOT_FOLDER .. "/Games"
 local CONFIG_FOLDER = GAMES_FOLDER .. "/" .. gameId
 local SETTINGS_FILE = ROOT_FOLDER .. "/settings.json"
@@ -82,7 +82,7 @@ local AnimatedBgEnabled = true
 local function updateStatus(msg) if UI and UI.statusLabel then UI.statusLabel.Text = msg end end
 local function updateSection(name)
     CurrentSection = name
-    if UI.sectionLabel then UI.sectionLabel.Text = "› " .. name end
+    if UI.sectionLabel then UI.sectionLabel.Text = "// " .. name end
 end
 
 local function applyTransparency(on)
@@ -130,8 +130,8 @@ local function setTabActive(tabName)
     Sections = {} -- Clear sections for new tab
     for name, tab in pairs(Tabs) do
         local isActive = name == tabName
-        local targetBg = isActive and Color3.fromRGB(52, 44, 82) or Color3.fromRGB(30, 30, 43)
-        local targetText = isActive and Color3.fromRGB(190, 160, 255) or Color3.fromRGB(150, 148, 175)
+        local targetBg = isActive and Color3.fromRGB(56, 46, 88) or Color3.fromRGB(30, 28, 40)
+        local targetText = isActive and Color3.fromRGB(168, 130, 255) or Color3.fromRGB(150, 148, 170)
         local indicatorTransparency = isActive and 0 or 1
         
         TweenService:Create(tab.button, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {BackgroundColor3 = targetBg, TextColor3 = targetText}):Play()
@@ -163,48 +163,30 @@ local function createAnimatedBackground(parent)
     AnimatedBgEnabled = settings.animatedBg
     if not settings.animatedBg then bg.Visible = false end
 
-    -- Soft diagonal gradient wash behind the particles
-    local wash = Instance.new("Frame")
-    wash.Size = UDim2.new(1, 0, 1, 0); wash.BackgroundColor3 = Color3.fromRGB(70, 50, 130)
-    wash.BackgroundTransparency = 0.9; wash.BorderSizePixel = 0; wash.ZIndex = 1; wash.Parent = bg
-    local washGrad = Instance.new("UIGradient")
-    washGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 90, 255)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(60, 40, 120)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 180, 220)),
-    })
-    washGrad.Rotation = 45; washGrad.Parent = wash
-
-    -- Floating glow orbs (aurora style)
-    local orbColors = {Color3.fromRGB(168, 130, 255), Color3.fromRGB(100, 200, 255), Color3.fromRGB(200, 150, 255)}
-    for i = 1, 7 do
-        local size = math.random(50, 110)
-        local orb = Instance.new("Frame")
-        orb.BackgroundColor3 = orbColors[math.random(1, #orbColors)]
-        orb.BackgroundTransparency = 0.82
-        orb.BorderSizePixel = 0
-        orb.Size = UDim2.fromOffset(size, size)
-        orb.Position = UDim2.new(math.random() * 0.9, 0, math.random() * 1.1, 0)
-        orb.ZIndex = 1; orb.Parent = bg
-        Instance.new("UICorner", orb).CornerRadius = UDim.new(1, 0)
-        local orbGrad = Instance.new("UIGradient")
-        orbGrad.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(1, 1)})
-        orbGrad.Rotation = 90; orbGrad.Parent = orb
+    -- Ambient particle drift effect
+    for i = 1, 8 do
+        local drip = Instance.new("Frame")
+        drip.BackgroundColor3 = Color3.fromRGB(130, 170, 255)
+        drip.BackgroundTransparency = 0.75
+        drip.BorderSizePixel = 0
+        drip.Size = UDim2.new(0, math.random(30, 80), 0, math.random(60, 150))
+        drip.Position = UDim2.new(math.random() * 0.9, 0, -0.3, 0)
+        drip.ZIndex = 1; drip.Parent = bg
+        local dripCorner = Instance.new("UICorner"); dripCorner.CornerRadius = UDim.new(0, 20); dripCorner.Parent = drip
+        local dripGrad = Instance.new("UIGradient"); dripGrad.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.6), NumberSequenceKeypoint.new(0.7, 0.8), NumberSequenceKeypoint.new(1, 1)}); dripGrad.Rotation = 90; dripGrad.Parent = drip
 
         task.spawn(function()
-            task.wait(i * 0.6)
-            while orb and orb.Parent do
+            task.wait(i * 0.8)
+            while drip and drip.Parent do
                 if not AnimatedBgEnabled then
                     task.wait(0.5)
                     continue
                 end
-                local x = math.random() * 0.9
-                local newSize = math.random(40, 100)
-                orb.Position = UDim2.new(x, 0, 1.15, 0)
-                orb.Size = UDim2.fromOffset(newSize, newSize)
-                local dur = 14 + math.random() * 12
-                TweenService:Create(orb, TweenInfo.new(dur, Enum.EasingStyle.Sine), {Position = UDim2.new(x + (math.random() - 0.5) * 0.2, 0, -0.25, 0)}):Play()
-                TweenService:Create(orb, TweenInfo.new(dur / 2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {BackgroundTransparency = 0.68}):Play()
+                local x = math.random() * 0.85
+                drip.Position = UDim2.new(x, 0, -0.4, 0)
+                drip.Size = UDim2.new(0, math.random(25, 70), 0, math.random(50, 120))
+                local dur = 12 + math.random() * 10
+                TweenService:Create(drip, TweenInfo.new(dur, Enum.EasingStyle.Sine), {Position = UDim2.new(x, 0, 1.2, 0)}):Play()
                 task.wait(dur)
             end
         end)
@@ -214,7 +196,7 @@ end
 
 local function buildUI()
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "NovaUI"; screenGui.ResetOnSpawn = false; screenGui.IgnoreGuiInset = true
+    screenGui.Name = "AetherUI"; screenGui.ResetOnSpawn = false; screenGui.IgnoreGuiInset = true
     screenGui.DisplayOrder = 999999; screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     screenGui.Enabled = true
 
@@ -223,40 +205,51 @@ local function buildUI()
     local main = Instance.new("CanvasGroup")
     main.Name = "Main"; main.Size = UDim2.fromOffset(uiW, uiH)
     main.Position = UDim2.new(0.5, -uiW/2, 0.5, -uiH/2)
-    main.BackgroundColor3 = Color3.fromRGB(16, 16, 24); main.BackgroundTransparency = settings.transparent and 0.3 or 0
+    main.BackgroundColor3 = Color3.fromRGB(15, 14, 20); main.BackgroundTransparency = settings.transparent and 0.3 or 0
     main.GroupTransparency = 1; main.Visible = false
     main.BorderSizePixel = 0; main.Parent = screenGui
 
-    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 12); corner.Parent = main
+    local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 18); corner.Parent = main
     local stroke = Instance.new("UIStroke"); stroke.Color = Color3.fromRGB(168, 130, 255); stroke.Thickness = 1.5; stroke.Transparency = 1; stroke.Parent = main
     local strokeGrad = Instance.new("UIGradient")
-    strokeGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(190, 150, 255)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(130, 100, 255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 210, 255)),
-    })
+    strokeGrad.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(168, 130, 255)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(110, 190, 255)), ColorSequenceKeypoint.new(1, Color3.fromRGB(168, 130, 255))})
     strokeGrad.Rotation = 45; strokeGrad.Parent = stroke
+
+    local mainGrad = Instance.new("UIGradient")
+    mainGrad.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 18, 28)), ColorSequenceKeypoint.new(1, Color3.fromRGB(13, 12, 18))})
+    mainGrad.Rotation = 80; mainGrad.Parent = main
 
     createAnimatedBackground(main)
 
     local sidebar = Instance.new("Frame")
     sidebar.Name = "Sidebar"; sidebar.Size = UDim2.new(0, 130, 1, 0); sidebar.Position = UDim2.fromOffset(0, 0)
-    sidebar.BackgroundColor3 = Color3.fromRGB(22, 22, 32); sidebar.BackgroundTransparency = settings.transparent and 0.2 or 0
+    sidebar.BackgroundColor3 = Color3.fromRGB(24, 22, 32); sidebar.BackgroundTransparency = settings.transparent and 0.2 or 0
     sidebar.BorderSizePixel = 0; sidebar.ZIndex = 2; sidebar.Parent = main
 
-    local sideCorner = Instance.new("UICorner"); sideCorner.CornerRadius = UDim.new(0, 12); sideCorner.Parent = sidebar
+    local sideCorner = Instance.new("UICorner"); sideCorner.CornerRadius = UDim.new(0, 18); sideCorner.Parent = sidebar
+    local sideGrad = Instance.new("UIGradient")
+    sideGrad.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 27, 42)), ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 18, 30))})
+    sideGrad.Rotation = 90; sideGrad.Parent = sidebar
     local sideClip = Instance.new("Frame"); sideClip.Size = UDim2.new(0, 12, 1, 0); sideClip.Position = UDim2.new(1, -12, 0, 0)
-    sideClip.BackgroundColor3 = Color3.fromRGB(22, 22, 32); sideClip.BackgroundTransparency = settings.transparent and 0.2 or 0
+    sideClip.BackgroundColor3 = Color3.fromRGB(24, 22, 32); sideClip.BackgroundTransparency = settings.transparent and 0.2 or 0
     sideClip.BorderSizePixel = 0; sideClip.ZIndex = 2; sideClip.Parent = sidebar
 
     local title = Instance.new("TextLabel")
     title.Size = UDim2.new(1, -16, 0, 32); title.Position = UDim2.fromOffset(12, 12); title.BackgroundTransparency = 1
-    title.Font = Enum.Font.FredokaOne; title.TextSize = 16; title.Text = "✦ NovaUI"
-    title.TextColor3 = Color3.fromRGB(205, 185, 255); title.TextXAlignment = Enum.TextXAlignment.Left; title.ZIndex = 3; title.Parent = sidebar
+    title.Font = Enum.Font.GothamBlack; title.TextSize = 17; title.Text = "✦  AETHER"
+    title.TextColor3 = Color3.fromRGB(230, 225, 255); title.TextXAlignment = Enum.TextXAlignment.Left; title.ZIndex = 3; title.Parent = sidebar
+
+    local titleUnderline = Instance.new("Frame")
+    titleUnderline.Size = UDim2.new(0, 28, 0, 3); titleUnderline.Position = UDim2.fromOffset(13, 40)
+    titleUnderline.BorderSizePixel = 0; titleUnderline.ZIndex = 3; titleUnderline.Parent = sidebar
+    Instance.new("UICorner", titleUnderline).CornerRadius = UDim.new(1, 0)
+    local underlineGrad = Instance.new("UIGradient")
+    underlineGrad.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(168, 130, 255)), ColorSequenceKeypoint.new(1, Color3.fromRGB(110, 190, 255))})
+    underlineGrad.Parent = titleUnderline
 
     local tabsHolder = Instance.new("ScrollingFrame")
     tabsHolder.Name = "TabsHolder"; tabsHolder.Size = UDim2.new(1, -16, 1, -55); tabsHolder.Position = UDim2.fromOffset(8, 48)
-    tabsHolder.BackgroundTransparency = 1; tabsHolder.ScrollBarThickness = 2; tabsHolder.ScrollBarImageColor3 = Color3.fromRGB(175, 140, 255)
+    tabsHolder.BackgroundTransparency = 1; tabsHolder.ScrollBarThickness = 2; tabsHolder.ScrollBarImageColor3 = Color3.fromRGB(168, 130, 255)
     tabsHolder.ScrollBarImageTransparency = 0.5; tabsHolder.CanvasSize = UDim2.new(0, 0, 0, 0)
     tabsHolder.AutomaticCanvasSize = Enum.AutomaticSize.Y; tabsHolder.ZIndex = 3; tabsHolder.Parent = sidebar
 
@@ -265,22 +258,22 @@ local function buildUI()
 
     local contentArea = Instance.new("Frame")
     contentArea.Name = "ContentArea"; contentArea.Size = UDim2.new(1, -140, 1, -10); contentArea.Position = UDim2.fromOffset(135, 5)
-    contentArea.BackgroundColor3 = Color3.fromRGB(26, 26, 38); contentArea.BackgroundTransparency = settings.transparent and 0.15 or 0
+    contentArea.BackgroundColor3 = Color3.fromRGB(28, 26, 38); contentArea.BackgroundTransparency = settings.transparent and 0.15 or 0
     contentArea.BorderSizePixel = 0; contentArea.ZIndex = 2; contentArea.Parent = main
 
-    local contentCorner = Instance.new("UICorner"); contentCorner.CornerRadius = UDim.new(0, 10); contentCorner.Parent = contentArea
+    local contentCorner = Instance.new("UICorner"); contentCorner.CornerRadius = UDim.new(0, 14); contentCorner.Parent = contentArea
 
     local header = Instance.new("Frame"); header.Size = UDim2.new(1, 0, 0, 40); header.BackgroundTransparency = 1; header.ZIndex = 3; header.Parent = contentArea
 
     local sepLabel = Instance.new("TextLabel")
     sepLabel.Size = UDim2.new(1, -20, 0, 20); sepLabel.Position = UDim2.fromOffset(12, 8); sepLabel.BackgroundTransparency = 1
-    sepLabel.Font = Enum.Font.FredokaOne; sepLabel.TextSize = 14; sepLabel.Text = "› " .. CurrentSection
-    sepLabel.TextColor3 = Color3.fromRGB(195, 165, 255); sepLabel.TextXAlignment = Enum.TextXAlignment.Left; sepLabel.ZIndex = 3; sepLabel.Parent = header
+    sepLabel.Font = Enum.Font.GothamBlack; sepLabel.TextSize = 14; sepLabel.Text = "// " .. CurrentSection
+    sepLabel.TextColor3 = Color3.fromRGB(196, 168, 255); sepLabel.TextXAlignment = Enum.TextXAlignment.Left; sepLabel.ZIndex = 3; sepLabel.Parent = header
 
     local status = Instance.new("TextLabel")
     status.Size = UDim2.new(1, -20, 0, 14); status.Position = UDim2.fromOffset(12, 26); status.BackgroundTransparency = 1
     status.Font = Enum.Font.Gotham; status.TextSize = 10; status.Text = "Ready."
-    status.TextColor3 = Color3.fromRGB(135, 133, 160); status.TextXAlignment = Enum.TextXAlignment.Left; status.ZIndex = 3; status.Parent = header
+    status.TextColor3 = Color3.fromRGB(150, 148, 170); status.TextXAlignment = Enum.TextXAlignment.Left; status.ZIndex = 3; status.Parent = header
 
     local tabContent = Instance.new("Frame")
     tabContent.Name = "TabContent"; tabContent.Size = UDim2.new(1, -10, 1, -50); tabContent.Position = UDim2.fromOffset(5, 45)
@@ -322,7 +315,7 @@ local function buildUI()
     -- Close button
     local closeBtn = Instance.new("TextButton")
     closeBtn.Size = UDim2.fromOffset(24, 24); closeBtn.Position = UDim2.new(1, -30, 0, 6)
-    closeBtn.BackgroundColor3 = Color3.fromRGB(185, 60, 85); closeBtn.Text = ""
+    closeBtn.BackgroundColor3 = Color3.fromRGB(205, 70, 90); closeBtn.Text = ""
     closeBtn.AutoButtonColor = false; closeBtn.ZIndex = 11; closeBtn.Parent = main
     Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
 
@@ -339,12 +332,12 @@ local function buildUI()
     local mobileBtn = Instance.new("TextButton")
     mobileBtn.Name = "MobileToggle"; mobileBtn.Size = UDim2.fromOffset(45, 45)
     mobileBtn.Position = UDim2.new(0.5, -22, 0.1, 0)
-    mobileBtn.BackgroundColor3 = Color3.fromRGB(16, 16, 24) -- Same as main UI
+    mobileBtn.BackgroundColor3 = Color3.fromRGB(15, 14, 20) -- Same as main UI
     mobileBtn.BackgroundTransparency = 0.2
     mobileBtn.Text = "✦"
-    mobileBtn.Font = Enum.Font.FredokaOne
+    mobileBtn.Font = Enum.Font.GothamBlack
     mobileBtn.TextSize = 22
-    mobileBtn.TextColor3 = Color3.fromRGB(205, 185, 255)
+    mobileBtn.TextColor3 = Color3.fromRGB(196, 168, 255)
     mobileBtn.AutoButtonColor = false; mobileBtn.ZIndex = 11; mobileBtn.Parent = screenGui
     
     Instance.new("UICorner", mobileBtn).CornerRadius = UDim.new(1, 0)
@@ -403,22 +396,22 @@ local function buildUI()
     promptOverlay.BackgroundTransparency = 0.5; promptOverlay.ZIndex = 100; promptOverlay.Visible = false; promptOverlay.Parent = main
     local promptBox = Instance.new("Frame")
     promptBox.Size = UDim2.fromOffset(280, 120); promptBox.Position = UDim2.new(0.5, -140, 0.5, -60)
-    promptBox.BackgroundColor3 = Color3.fromRGB(30, 30, 43); promptBox.ZIndex = 101; promptBox.Parent = promptOverlay
-    Instance.new("UICorner", promptBox).CornerRadius = UDim.new(0, 10)
+    promptBox.BackgroundColor3 = Color3.fromRGB(30, 28, 40); promptBox.ZIndex = 101; promptBox.Parent = promptOverlay
+    Instance.new("UICorner", promptBox).CornerRadius = UDim.new(0, 16)
     local promptStroke = Instance.new("UIStroke"); promptStroke.Color = Color3.fromRGB(168, 130, 255); promptStroke.Thickness = 2; promptStroke.Parent = promptBox
     local promptText = Instance.new("TextLabel")
     promptText.Size = UDim2.new(1, -20, 0, 50); promptText.Position = UDim2.fromOffset(10, 10)
-    promptText.BackgroundTransparency = 1; promptText.Font = Enum.Font.FredokaOne; promptText.TextSize = 12
-    promptText.TextColor3 = Color3.fromRGB(228, 228, 242); promptText.TextWrapped = true; promptText.ZIndex = 102; promptText.Parent = promptBox
+    promptText.BackgroundTransparency = 1; promptText.Font = Enum.Font.GothamBlack; promptText.TextSize = 12
+    promptText.TextColor3 = Color3.fromRGB(224, 220, 240); promptText.TextWrapped = true; promptText.ZIndex = 102; promptText.Parent = promptBox
     local promptYes = Instance.new("TextButton")
     promptYes.Size = UDim2.fromOffset(100, 30); promptYes.Position = UDim2.new(0.5, -110, 1, -45)
-    promptYes.BackgroundColor3 = Color3.fromRGB(235, 90, 115); promptYes.Text = "Yes"; promptYes.Font = Enum.Font.FredokaOne
+    promptYes.BackgroundColor3 = Color3.fromRGB(235, 87, 120); promptYes.Text = "Yes"; promptYes.Font = Enum.Font.GothamBlack
     promptYes.TextSize = 12; promptYes.TextColor3 = Color3.fromRGB(255, 255, 255); promptYes.ZIndex = 102; promptYes.Parent = promptBox
     Instance.new("UICorner", promptYes).CornerRadius = UDim.new(0, 6)
     local promptNo = Instance.new("TextButton")
     promptNo.Size = UDim2.fromOffset(100, 30); promptNo.Position = UDim2.new(0.5, 10, 1, -45)
-    promptNo.BackgroundColor3 = Color3.fromRGB(50, 48, 68); promptNo.Text = "No"; promptNo.Font = Enum.Font.FredokaOne
-    promptNo.TextSize = 12; promptNo.TextColor3 = Color3.fromRGB(190, 190, 215); promptNo.ZIndex = 102; promptNo.Parent = promptBox
+    promptNo.BackgroundColor3 = Color3.fromRGB(55, 52, 68); promptNo.Text = "No"; promptNo.Font = Enum.Font.GothamBlack
+    promptNo.TextSize = 12; promptNo.TextColor3 = Color3.fromRGB(175, 172, 195); promptNo.ZIndex = 102; promptNo.Parent = promptBox
     Instance.new("UICorner", promptNo).CornerRadius = UDim.new(0, 6)
 
     return {screenGui = screenGui, mainFrame = main, mainStroke = stroke, statusLabel = status, sectionLabel = sepLabel, tabsHolder = tabsHolder, tabContent = tabContent, resizeHandle = resizeHandle, sidebar = sidebar, contentArea = contentArea, sideClip = sideClip, mobileBtn = mobileBtn, closeBtn = closeBtn, promptOverlay = promptOverlay, promptText = promptText, promptYes = promptYes, promptNo = promptNo}
@@ -437,12 +430,12 @@ end
 -- Unload function
 local function unloadUI()
     if UI.OnUnload then UI.OnUnload() end
-    getgenv().NovaUILoaded = nil
+    getgenv().AetherUILoaded = nil
     if UI.screenGui then UI.screenGui:Destroy() end
 end
 
 UI.closeBtn.MouseButton1Click:Connect(function()
-    showPrompt("Are you sure you want to unload NovaUI?", unloadUI)
+    showPrompt("Are you sure you want to unload Aether?", unloadUI)
 end)
 
 local function enableDragging(frame, handle)
@@ -548,9 +541,9 @@ local function createTab(tabName, isSettings)
 
     local tabBtn = Instance.new("TextButton")
     tabBtn.Name = tabName .. "Tab"; tabBtn.Size = UDim2.new(1, 0, 0, 32)
-    tabBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 43); tabBtn.BorderSizePixel = 0
-    tabBtn.Font = Enum.Font.FredokaOne; tabBtn.TextSize = settings.textSize or 12
-    tabBtn.Text = "        " .. tabName; tabBtn.TextColor3 = Color3.fromRGB(150, 148, 175)
+    tabBtn.BackgroundColor3 = Color3.fromRGB(30, 28, 40); tabBtn.BorderSizePixel = 0
+    tabBtn.Font = Enum.Font.GothamBlack; tabBtn.TextSize = settings.textSize or 12
+    tabBtn.Text = "        " .. tabName; tabBtn.TextColor3 = Color3.fromRGB(150, 148, 170)
     tabBtn.TextXAlignment = Enum.TextXAlignment.Left
     tabBtn.AutoButtonColor = false; tabBtn.ZIndex = 4; tabBtn.LayoutOrder = layoutOrder; tabBtn.Parent = UI.tabsHolder
 
@@ -560,13 +553,13 @@ local function createTab(tabName, isSettings)
     indicator.BorderSizePixel = 0; indicator.BackgroundTransparency = 1; indicator.ZIndex = 5; indicator.Parent = tabBtn
     Instance.new("UICorner", indicator).CornerRadius = UDim.new(1, 0)
 
-    local tabCorner = Instance.new("UICorner"); tabCorner.CornerRadius = UDim.new(0, 6); tabCorner.Parent = tabBtn
+    local tabCorner = Instance.new("UICorner"); tabCorner.CornerRadius = UDim.new(0, 10); tabCorner.Parent = tabBtn
 
     tabBtn.MouseEnter:Connect(function()
-        if ActiveTab ~= tabName then TweenService:Create(tabBtn, TweenInfo.new(0.15, Enum.EasingStyle.Quint), {BackgroundColor3 = Color3.fromRGB(40, 40, 58)}):Play() end
+        if ActiveTab ~= tabName then TweenService:Create(tabBtn, TweenInfo.new(0.15, Enum.EasingStyle.Quint), {BackgroundColor3 = Color3.fromRGB(42, 39, 56)}):Play() end
     end)
     tabBtn.MouseLeave:Connect(function()
-        if ActiveTab ~= tabName then TweenService:Create(tabBtn, TweenInfo.new(0.15, Enum.EasingStyle.Quint), {BackgroundColor3 = Color3.fromRGB(30, 30, 43)}):Play() end
+        if ActiveTab ~= tabName then TweenService:Create(tabBtn, TweenInfo.new(0.15, Enum.EasingStyle.Quint), {BackgroundColor3 = Color3.fromRGB(30, 28, 40)}):Play() end
     end)
 
     local container = Instance.new("CanvasGroup")
@@ -575,7 +568,7 @@ local function createTab(tabName, isSettings)
 
     local scroll = Instance.new("ScrollingFrame")
     scroll.Size = UDim2.new(1, 0, 1, 0); scroll.BackgroundTransparency = 1; scroll.ScrollBarThickness = 3
-    scroll.ScrollBarImageColor3 = Color3.fromRGB(175, 140, 255); scroll.ScrollBarImageTransparency = 0.4
+    scroll.ScrollBarImageColor3 = Color3.fromRGB(168, 130, 255); scroll.ScrollBarImageTransparency = 0.4
     scroll.CanvasSize = UDim2.new(0, 0, 0, 0); scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; scroll.ZIndex = 2; scroll.Parent = container
 
     local layout = Instance.new("UIListLayout"); layout.Padding = UDim.new(0, 5); layout.SortOrder = Enum.SortOrder.LayoutOrder; layout.Parent = scroll
@@ -588,8 +581,8 @@ local function createTab(tabName, isSettings)
     end
 
     local function makeLabel(text)
-        local lbl = Instance.new("TextLabel"); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.FredokaOne
-        lbl.TextSize = settings.textSize; lbl.TextColor3 = Color3.fromRGB(150, 148, 180); lbl.TextXAlignment = Enum.TextXAlignment.Left
+        local lbl = Instance.new("TextLabel"); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.GothamBlack
+        lbl.TextSize = settings.textSize; lbl.TextColor3 = Color3.fromRGB(175, 172, 195); lbl.TextXAlignment = Enum.TextXAlignment.Left
         lbl.Text = text; lbl.Size = UDim2.new(1, 0, 0, 14); lbl.ZIndex = 2; lbl.Parent = scroll; return lbl
     end
 
@@ -598,9 +591,9 @@ local function createTab(tabName, isSettings)
         local f = Instance.new("Frame"); f.Size = UDim2.new(1, 0, 0, 24); f.BackgroundTransparency = 1; f.ZIndex = 2; f.LayoutOrder = getNextLayoutOrder(); f.Parent = scroll
         table.insert(Sections, {name = name, frame = f})
         
-        local l = Instance.new("Frame"); l.Size = UDim2.new(0.3, -8, 0, 1); l.Position = UDim2.new(0, 0, 0.5, 0); l.BackgroundColor3 = Color3.fromRGB(70, 68, 95); l.BorderSizePixel = 0; l.ZIndex = 2; l.Parent = f
-        local t = Instance.new("TextLabel"); t.Size = UDim2.new(0.4, 0, 1, 0); t.Position = UDim2.new(0.3, 0, 0, 0); t.BackgroundTransparency = 1; t.Font = Enum.Font.FredokaOne; t.TextSize = 10; t.Text = name; t.TextColor3 = Color3.fromRGB(180, 155, 235); t.ZIndex = 2; t.Parent = f
-        local r = Instance.new("Frame"); r.Size = UDim2.new(0.3, -8, 0, 1); r.Position = UDim2.new(0.7, 8, 0.5, 0); r.BackgroundColor3 = Color3.fromRGB(70, 68, 95); r.BorderSizePixel = 0; r.ZIndex = 2; r.Parent = f
+        local l = Instance.new("Frame"); l.Size = UDim2.new(0.3, -8, 0, 1); l.Position = UDim2.new(0, 0, 0.5, 0); l.BackgroundColor3 = Color3.fromRGB(72, 68, 92); l.BorderSizePixel = 0; l.ZIndex = 2; l.Parent = f
+        local t = Instance.new("TextLabel"); t.Size = UDim2.new(0.4, 0, 1, 0); t.Position = UDim2.new(0.3, 0, 0, 0); t.BackgroundTransparency = 1; t.Font = Enum.Font.GothamBlack; t.TextSize = 10; t.Text = name; t.TextColor3 = Color3.fromRGB(196, 168, 255); t.ZIndex = 2; t.Parent = f
+        local r = Instance.new("Frame"); r.Size = UDim2.new(0.3, -8, 0, 1); r.Position = UDim2.new(0.7, 8, 0.5, 0); r.BackgroundColor3 = Color3.fromRGB(72, 68, 92); r.BorderSizePixel = 0; r.ZIndex = 2; r.Parent = f
         local b = Instance.new("TextButton"); b.Size = UDim2.new(1, 0, 1, 0); b.BackgroundTransparency = 1; b.Text = ""; b.ZIndex = 3; b.Parent = f
         b.MouseButton1Click:Connect(function() 
             scroll.CanvasPosition = Vector2.new(0, f.AbsolutePosition.Y - scroll.AbsolutePosition.Y + scroll.CanvasPosition.Y)
@@ -626,23 +619,23 @@ local function createTab(tabName, isSettings)
 
     local function addText(options)
         local lbl = Instance.new("TextLabel"); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.Gotham
-        lbl.TextSize = options.size or 10; lbl.TextColor3 = options.color or Color3.fromRGB(110, 108, 140)
+        lbl.TextSize = options.size or 10; lbl.TextColor3 = options.color or Color3.fromRGB(140, 137, 158)
         lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Text = options.text or ""; lbl.TextWrapped = true
         lbl.Size = UDim2.new(1, 0, 0, options.height or 14); lbl.ZIndex = 2; lbl.LayoutOrder = getNextLayoutOrder(); lbl.Parent = scroll
         return lbl
     end
 
     local function addToggle(options)
-        local row = Instance.new("Frame"); row.Size = UDim2.new(1, 0, 0, 28); row.BackgroundColor3 = Color3.fromRGB(34, 34, 48); row.BorderSizePixel = 0; row.ZIndex = 2; row.LayoutOrder = getNextLayoutOrder(); row.Parent = scroll
-        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 6)
-        local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(1, -60, 1, 0); lbl.Position = UDim2.fromOffset(10, 0); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.Gotham; lbl.TextSize = settings.textSize; lbl.TextColor3 = Color3.fromRGB(190, 190, 215); lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Text = options.label; lbl.ZIndex = 3; lbl.Parent = row
-        local tf = Instance.new("Frame"); tf.Size = UDim2.fromOffset(38, 18); tf.Position = UDim2.new(1, -48, 0.5, -9); tf.BackgroundColor3 = Color3.fromRGB(46, 46, 66); tf.BorderSizePixel = 0; tf.ZIndex = 3; tf.Parent = row
+        local row = Instance.new("Frame"); row.Size = UDim2.new(1, 0, 0, 28); row.BackgroundColor3 = Color3.fromRGB(34, 32, 46); row.BorderSizePixel = 0; row.ZIndex = 2; row.LayoutOrder = getNextLayoutOrder(); row.Parent = scroll
+        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 10)
+        local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(1, -60, 1, 0); lbl.Position = UDim2.fromOffset(10, 0); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.Gotham; lbl.TextSize = settings.textSize; lbl.TextColor3 = Color3.fromRGB(175, 172, 195); lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Text = options.label; lbl.ZIndex = 3; lbl.Parent = row
+        local tf = Instance.new("Frame"); tf.Size = UDim2.fromOffset(38, 18); tf.Position = UDim2.new(1, -48, 0.5, -9); tf.BackgroundColor3 = Color3.fromRGB(52, 49, 68); tf.BorderSizePixel = 0; tf.ZIndex = 3; tf.Parent = row
         Instance.new("UICorner", tf).CornerRadius = UDim.new(1, 0)
-        local knob = Instance.new("Frame"); knob.Size = UDim2.fromOffset(14, 14); knob.Position = UDim2.fromOffset(2, 2); knob.BackgroundColor3 = Color3.fromRGB(110, 108, 140); knob.ZIndex = 4; knob.Parent = tf
+        local knob = Instance.new("Frame"); knob.Size = UDim2.fromOffset(14, 14); knob.Position = UDim2.fromOffset(2, 2); knob.BackgroundColor3 = Color3.fromRGB(140, 137, 158); knob.ZIndex = 4; knob.Parent = tf
         Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
         local state = options.default or false
         local function apply(v, a)
-            state = v; local tP = state and UDim2.fromOffset(22, 2) or UDim2.fromOffset(2, 2); local tC = state and Color3.fromRGB(168, 130, 255) or Color3.fromRGB(46, 46, 66); local kC = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(110, 108, 140)
+            state = v; local tP = state and UDim2.fromOffset(22, 2) or UDim2.fromOffset(2, 2); local tC = state and Color3.fromRGB(168, 130, 255) or Color3.fromRGB(52, 49, 68); local kC = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(140, 137, 158)
             if a then TweenService:Create(knob, TweenInfo.new(0.2, Enum.EasingStyle.Quint), {Position = tP, BackgroundColor3 = kC}):Play(); TweenService:Create(tf, TweenInfo.new(0.2, Enum.EasingStyle.Quint), {BackgroundColor3 = tC}):Play()
             else knob.Position = tP; knob.BackgroundColor3 = kC; tf.BackgroundColor3 = tC end
         end
@@ -658,29 +651,29 @@ local function createTab(tabName, isSettings)
 
     local function addButton(options)
         local btn = Instance.new("TextButton")
-        btn.Name = "ButtonRow"; btn.Size = UDim2.new(1, 0, 0, 32); btn.BackgroundColor3 = Color3.fromRGB(34, 34, 48); btn.BorderSizePixel = 0
+        btn.Name = "ButtonRow"; btn.Size = UDim2.new(1, 0, 0, 32); btn.BackgroundColor3 = Color3.fromRGB(34, 32, 46); btn.BorderSizePixel = 0
         btn.AutoButtonColor = false; btn.Text = ""; btn.ZIndex = 2; btn.LayoutOrder = getNextLayoutOrder(); btn.Parent = scroll
-        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
         
-        local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(1, -40, 1, 0); lbl.Position = UDim2.fromOffset(10, 0); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.FredokaOne; lbl.TextSize = settings.textSize; lbl.TextColor3 = Color3.fromRGB(190, 190, 215); lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Text = options.label or "Action"; lbl.ZIndex = 3; lbl.Parent = btn
+        local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(1, -40, 1, 0); lbl.Position = UDim2.fromOffset(10, 0); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.GothamBlack; lbl.TextSize = settings.textSize; lbl.TextColor3 = Color3.fromRGB(175, 172, 195); lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Text = options.label or "Action"; lbl.ZIndex = 3; lbl.Parent = btn
         
-        local icon = Instance.new("TextLabel"); icon.Size = UDim2.new(0, 30, 1, 0); icon.Position = UDim2.new(1, -30, 0, 0); icon.BackgroundTransparency = 1; icon.Font = Enum.Font.FredokaOne; icon.TextSize = 14; icon.TextColor3 = Color3.fromRGB(168, 130, 255); icon.Text = "›"; icon.ZIndex = 3; icon.Parent = btn
+        local icon = Instance.new("TextLabel"); icon.Size = UDim2.new(0, 30, 1, 0); icon.Position = UDim2.new(1, -30, 0, 0); icon.BackgroundTransparency = 1; icon.Font = Enum.Font.GothamBlack; icon.TextSize = 14; icon.TextColor3 = Color3.fromRGB(168, 130, 255); icon.Text = "→"; icon.ZIndex = 3; icon.Parent = btn
         
         -- Subtle highlight border
-        local stroke = Instance.new("UIStroke"); stroke.Color = Color3.fromRGB(150, 120, 230); stroke.Thickness = 1.2; stroke.Transparency = 1; stroke.Parent = btn
+        local stroke = Instance.new("UIStroke"); stroke.Color = Color3.fromRGB(168, 130, 255); stroke.Thickness = 1.2; stroke.Transparency = 1; stroke.Parent = btn
 
         -- Background highlight effect
         local highlight = Instance.new("Frame"); highlight.Size = UDim2.new(1, 0, 1, 0); highlight.BackgroundColor3 = Color3.fromRGB(168, 130, 255); highlight.BackgroundTransparency = 1; highlight.ZIndex = 2; highlight.Parent = btn
-        Instance.new("UICorner", highlight).CornerRadius = UDim.new(0, 6)
+        Instance.new("UICorner", highlight).CornerRadius = UDim.new(0, 10)
 
         btn.MouseEnter:Connect(function() 
-            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 40, 57)}):Play()
+            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(46, 43, 60)}):Play()
             TweenService:Create(stroke, TweenInfo.new(0.2), {Transparency = 0.6}):Play()
             TweenService:Create(icon, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {TextSize = 18}):Play()
         end)
         
         btn.MouseLeave:Connect(function() 
-            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(34, 34, 48)}):Play()
+            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(34, 32, 46)}):Play()
             TweenService:Create(stroke, TweenInfo.new(0.2), {Transparency = 1}):Play()
             TweenService:Create(icon, TweenInfo.new(0.2), {TextSize = 14}):Play()
         end)
@@ -701,14 +694,14 @@ local function createTab(tabName, isSettings)
     end
 
     local function addSlider(options)
-        local row = Instance.new("Frame"); row.Size = UDim2.new(1, 0, 0, 34); row.BackgroundColor3 = Color3.fromRGB(34, 34, 48); row.BorderSizePixel = 0; row.ZIndex = 2; row.LayoutOrder = getNextLayoutOrder(); row.Parent = scroll
-        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 6)
+        local row = Instance.new("Frame"); row.Size = UDim2.new(1, 0, 0, 34); row.BackgroundColor3 = Color3.fromRGB(34, 32, 46); row.BorderSizePixel = 0; row.ZIndex = 2; row.LayoutOrder = getNextLayoutOrder(); row.Parent = scroll
+        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 10)
         
-        local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(0.4, -10, 1, 0); lbl.Position = UDim2.fromOffset(10, 0); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.Gotham; lbl.TextSize = settings.textSize; lbl.TextColor3 = Color3.fromRGB(190, 190, 215); lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Text = options.label; lbl.ZIndex = 3; lbl.Parent = row
+        local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(0.4, -10, 1, 0); lbl.Position = UDim2.fromOffset(10, 0); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.Gotham; lbl.TextSize = settings.textSize; lbl.TextColor3 = Color3.fromRGB(175, 172, 195); lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Text = options.label; lbl.ZIndex = 3; lbl.Parent = row
         
         local container = Instance.new("Frame"); container.Size = UDim2.new(0.6, -10, 1, 0); container.Position = UDim2.new(0.4, 0, 0, 0); container.BackgroundTransparency = 1; container.ZIndex = 3; container.Parent = row
         
-        local sliderBg = Instance.new("Frame"); sliderBg.Size = UDim2.new(1, -55, 0, 6); sliderBg.Position = UDim2.new(0, 5, 0.5, -3); sliderBg.BackgroundColor3 = Color3.fromRGB(46, 46, 66); sliderBg.BorderSizePixel = 0; sliderBg.ZIndex = 4; sliderBg.Parent = container
+        local sliderBg = Instance.new("Frame"); sliderBg.Size = UDim2.new(1, -55, 0, 6); sliderBg.Position = UDim2.new(0, 5, 0.5, -3); sliderBg.BackgroundColor3 = Color3.fromRGB(52, 49, 68); sliderBg.BorderSizePixel = 0; sliderBg.ZIndex = 4; sliderBg.Parent = container
         Instance.new("UICorner", sliderBg).CornerRadius = UDim.new(1, 0)
         
         local fill = Instance.new("Frame"); fill.Size = UDim2.new(0, 0, 1, 0); fill.BackgroundColor3 = Color3.fromRGB(168, 130, 255); fill.BorderSizePixel = 0; fill.ZIndex = 5; fill.Parent = sliderBg
@@ -719,7 +712,7 @@ local function createTab(tabName, isSettings)
 
         -- Editable Input
         local valInput = Instance.new("TextBox")
-        valInput.Size = UDim2.fromOffset(40, 20); valInput.Position = UDim2.new(1, -45, 0.5, -10); valInput.BackgroundColor3 = Color3.fromRGB(22, 22, 32); valInput.BorderSizePixel = 0; valInput.Font = Enum.Font.FredokaOne; valInput.TextSize = 10; valInput.TextColor3 = Color3.fromRGB(168, 130, 255); valInput.Text = ""; valInput.ZIndex = 5; valInput.Parent = container
+        valInput.Size = UDim2.fromOffset(40, 20); valInput.Position = UDim2.new(1, -45, 0.5, -10); valInput.BackgroundColor3 = Color3.fromRGB(24, 22, 32); valInput.BorderSizePixel = 0; valInput.Font = Enum.Font.GothamBlack; valInput.TextSize = 10; valInput.TextColor3 = Color3.fromRGB(168, 130, 255); valInput.Text = ""; valInput.ZIndex = 5; valInput.Parent = container
         Instance.new("UICorner", valInput).CornerRadius = UDim.new(0, 4)
         local inputStroke = Instance.new("UIStroke"); inputStroke.Color = Color3.fromRGB(168, 130, 255); inputStroke.Thickness = 1; inputStroke.Transparency = 0.6; inputStroke.Parent = valInput
 
@@ -761,21 +754,21 @@ local function createTab(tabName, isSettings)
     end
 
     local function addDropdown(options)
-        local row = Instance.new("Frame"); row.Size = UDim2.new(1, 0, 0, 28); row.BackgroundColor3 = Color3.fromRGB(34, 34, 48); row.BorderSizePixel = 0; row.ZIndex = 2; row.LayoutOrder = getNextLayoutOrder(); row.Parent = scroll
-        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 6)
+        local row = Instance.new("Frame"); row.Size = UDim2.new(1, 0, 0, 28); row.BackgroundColor3 = Color3.fromRGB(34, 32, 46); row.BorderSizePixel = 0; row.ZIndex = 2; row.LayoutOrder = getNextLayoutOrder(); row.Parent = scroll
+        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 10)
         
-        local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(1, -170, 1, 0); lbl.Position = UDim2.fromOffset(10, 0); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.Gotham; lbl.TextSize = settings.textSize; lbl.TextColor3 = Color3.fromRGB(190, 190, 215); lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Text = options.label; lbl.ZIndex = 3; lbl.Parent = row
+        local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(1, -170, 1, 0); lbl.Position = UDim2.fromOffset(10, 0); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.Gotham; lbl.TextSize = settings.textSize; lbl.TextColor3 = Color3.fromRGB(175, 172, 195); lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Text = options.label; lbl.ZIndex = 3; lbl.Parent = row
         
-        local dd = Instance.new("TextButton"); dd.Size = UDim2.fromOffset(150, 22); dd.Position = UDim2.new(1, -160, 0.5, -11); dd.BackgroundColor3 = Color3.fromRGB(36, 36, 52); dd.BorderSizePixel = 0; dd.Font = Enum.Font.Gotham; dd.TextSize = settings.textSize; dd.TextColor3 = Color3.fromRGB(190, 190, 215); dd.AutoButtonColor = false; dd.ZIndex = 5; dd.Parent = row
+        local dd = Instance.new("TextButton"); dd.Size = UDim2.fromOffset(150, 22); dd.Position = UDim2.new(1, -160, 0.5, -11); dd.BackgroundColor3 = Color3.fromRGB(40, 37, 52); dd.BorderSizePixel = 0; dd.Font = Enum.Font.Gotham; dd.TextSize = settings.textSize; dd.TextColor3 = Color3.fromRGB(175, 172, 195); dd.AutoButtonColor = false; dd.ZIndex = 5; dd.Parent = row
         Instance.new("UICorner", dd).CornerRadius = UDim.new(0, 6)
         
-        local arrow = Instance.new("TextLabel"); arrow.Size = UDim2.fromOffset(16, 22); arrow.Position = UDim2.new(1, -18, 0, 0); arrow.BackgroundTransparency = 1; arrow.Text = "▼"; arrow.TextColor3 = Color3.fromRGB(110, 108, 140); arrow.Font = Enum.Font.FredokaOne; arrow.TextSize = 8; arrow.ZIndex = 6; arrow.Parent = dd
+        local arrow = Instance.new("TextLabel"); arrow.Size = UDim2.fromOffset(16, 22); arrow.Position = UDim2.new(1, -18, 0, 0); arrow.BackgroundTransparency = 1; arrow.Text = "▼"; arrow.TextColor3 = Color3.fromRGB(140, 137, 158); arrow.Font = Enum.Font.GothamBlack; arrow.TextSize = 8; arrow.ZIndex = 6; arrow.Parent = dd
         
         -- Dropdown list container
         local lf = Instance.new("Frame")
         lf.Size = UDim2.new(1, 0, 0, 0)
         lf.Position = UDim2.fromOffset(0, 24) -- Positioned below the button
-        lf.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+        lf.BackgroundColor3 = Color3.fromRGB(20, 18, 28)
         lf.BorderSizePixel = 0
         lf.ClipsDescendants = true
         lf.Visible = false
@@ -836,18 +829,18 @@ local function createTab(tabName, isSettings)
             for i, it in ipairs(items) do
                 local ib = Instance.new("TextButton")
                 ib.Size = UDim2.new(1, 0, 0, 22)
-                ib.BackgroundColor3 = Color3.fromRGB(34, 34, 48)
+                ib.BackgroundColor3 = Color3.fromRGB(34, 32, 46)
                 ib.BorderSizePixel = 0
                 ib.Font = Enum.Font.Gotham
                 ib.TextSize = 11
-                ib.TextColor3 = Color3.fromRGB(228, 228, 242)
+                ib.TextColor3 = Color3.fromRGB(224, 220, 240)
                 ib.Text = tostring(it)
                 ib.AutoButtonColor = false
                 ib.ZIndex = 101
                 ib.Parent = lf
                 Instance.new("UICorner", ib).CornerRadius = UDim.new(0, 5)
-                ib.MouseEnter:Connect(function() TweenService:Create(ib, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(168, 130, 255), TextColor3 = Color3.fromRGB(20, 20, 30)}):Play() end)
-                ib.MouseLeave:Connect(function() TweenService:Create(ib, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(34, 34, 48), TextColor3 = Color3.fromRGB(228, 228, 242)}):Play() end)
+                ib.MouseEnter:Connect(function() TweenService:Create(ib, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(168, 130, 255), TextColor3 = Color3.fromRGB(18, 16, 26)}):Play() end)
+                ib.MouseLeave:Connect(function() TweenService:Create(ib, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(34, 32, 46), TextColor3 = Color3.fromRGB(224, 220, 240)}):Play() end)
                 ib.MouseButton1Click:Connect(function() sel(it); close() end)
                 table.insert(itemBtns, ib)
             end
@@ -889,10 +882,10 @@ local function createTab(tabName, isSettings)
     end
 
     local function addKeybind(options)
-        local row = Instance.new("Frame"); row.Size = UDim2.new(1, 0, 0, 28); row.BackgroundColor3 = Color3.fromRGB(34, 34, 48); row.BorderSizePixel = 0; row.ZIndex = 2; row.LayoutOrder = getNextLayoutOrder(); row.Parent = scroll
-        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 6)
-        local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(1, -90, 1, 0); lbl.Position = UDim2.fromOffset(10, 0); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.Gotham; lbl.TextSize = settings.textSize; lbl.TextColor3 = Color3.fromRGB(190, 190, 215); lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Text = options.label; lbl.ZIndex = 3; lbl.Parent = row
-        local keyBtn = Instance.new("TextButton"); keyBtn.Size = UDim2.fromOffset(70, 20); keyBtn.Position = UDim2.new(1, -80, 0.5, -10); keyBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 57); keyBtn.BorderSizePixel = 0; keyBtn.Font = Enum.Font.FredokaOne; keyBtn.TextSize = 9; keyBtn.TextColor3 = Color3.fromRGB(195, 165, 255); keyBtn.Text = options.default or "None"; keyBtn.AutoButtonColor = false; keyBtn.ZIndex = 4; keyBtn.Parent = row
+        local row = Instance.new("Frame"); row.Size = UDim2.new(1, 0, 0, 28); row.BackgroundColor3 = Color3.fromRGB(34, 32, 46); row.BorderSizePixel = 0; row.ZIndex = 2; row.LayoutOrder = getNextLayoutOrder(); row.Parent = scroll
+        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 10)
+        local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(1, -90, 1, 0); lbl.Position = UDim2.fromOffset(10, 0); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.Gotham; lbl.TextSize = settings.textSize; lbl.TextColor3 = Color3.fromRGB(175, 172, 195); lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Text = options.label; lbl.ZIndex = 3; lbl.Parent = row
+        local keyBtn = Instance.new("TextButton"); keyBtn.Size = UDim2.fromOffset(70, 20); keyBtn.Position = UDim2.new(1, -80, 0.5, -10); keyBtn.BackgroundColor3 = Color3.fromRGB(46, 43, 60); keyBtn.BorderSizePixel = 0; keyBtn.Font = Enum.Font.GothamBlack; keyBtn.TextSize = 9; keyBtn.TextColor3 = Color3.fromRGB(200, 175, 255); keyBtn.Text = options.default or "None"; keyBtn.AutoButtonColor = false; keyBtn.ZIndex = 4; keyBtn.Parent = row
         Instance.new("UICorner", keyBtn).CornerRadius = UDim.new(0, 4)
         local currentKey = options.default or "None"
         local listening = false
@@ -910,19 +903,19 @@ local function createTab(tabName, isSettings)
     end
 
     local function addToggleSlider(options)
-        local row = Instance.new("Frame"); row.Size = UDim2.new(1, 0, 0, 36); row.BackgroundColor3 = Color3.fromRGB(34, 34, 48); row.BorderSizePixel = 0; row.ZIndex = 2; row.LayoutOrder = getNextLayoutOrder(); row.Parent = scroll
-        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 6)
+        local row = Instance.new("Frame"); row.Size = UDim2.new(1, 0, 0, 36); row.BackgroundColor3 = Color3.fromRGB(34, 32, 46); row.BorderSizePixel = 0; row.ZIndex = 2; row.LayoutOrder = getNextLayoutOrder(); row.Parent = scroll
+        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 10)
         
-        local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(0.4, -10, 1, 0); lbl.Position = UDim2.fromOffset(10, 0); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.Gotham; lbl.TextSize = settings.textSize; lbl.TextColor3 = Color3.fromRGB(190, 190, 215); lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Text = options.label; lbl.ZIndex = 3; lbl.Parent = row
+        local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(0.4, -10, 1, 0); lbl.Position = UDim2.fromOffset(10, 0); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.Gotham; lbl.TextSize = settings.textSize; lbl.TextColor3 = Color3.fromRGB(175, 172, 195); lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Text = options.label; lbl.ZIndex = 3; lbl.Parent = row
         
         -- Toggle (Right)
-        local tf = Instance.new("Frame"); tf.Size = UDim2.fromOffset(38, 18); tf.Position = UDim2.new(1, -48, 0.5, -9); tf.BackgroundColor3 = Color3.fromRGB(46, 46, 66); tf.BorderSizePixel = 0; tf.ZIndex = 3; tf.Parent = row
+        local tf = Instance.new("Frame"); tf.Size = UDim2.fromOffset(38, 18); tf.Position = UDim2.new(1, -48, 0.5, -9); tf.BackgroundColor3 = Color3.fromRGB(52, 49, 68); tf.BorderSizePixel = 0; tf.ZIndex = 3; tf.Parent = row
         Instance.new("UICorner", tf).CornerRadius = UDim.new(1, 0)
-        local knob = Instance.new("Frame"); knob.Size = UDim2.fromOffset(14, 14); knob.Position = UDim2.fromOffset(2, 2); knob.BackgroundColor3 = Color3.fromRGB(110, 108, 140); knob.ZIndex = 4; knob.Parent = tf
+        local knob = Instance.new("Frame"); knob.Size = UDim2.fromOffset(14, 14); knob.Position = UDim2.fromOffset(2, 2); knob.BackgroundColor3 = Color3.fromRGB(140, 137, 158); knob.ZIndex = 4; knob.Parent = tf
         Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
         local state = options.defaultT or false
         local function applyT(v, a)
-            state = v; local tP = state and UDim2.fromOffset(22, 2) or UDim2.fromOffset(2, 2); local tC = state and Color3.fromRGB(168, 130, 255) or Color3.fromRGB(46, 46, 66); local kC = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(110, 108, 140)
+            state = v; local tP = state and UDim2.fromOffset(22, 2) or UDim2.fromOffset(2, 2); local tC = state and Color3.fromRGB(168, 130, 255) or Color3.fromRGB(52, 49, 68); local kC = state and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(140, 137, 158)
             if a then TweenService:Create(knob, TweenInfo.new(0.2, Enum.EasingStyle.Quint), {Position = tP, BackgroundColor3 = kC}):Play(); TweenService:Create(tf, TweenInfo.new(0.2, Enum.EasingStyle.Quint), {BackgroundColor3 = tC}):Play()
             else knob.Position = tP; knob.BackgroundColor3 = kC; tf.BackgroundColor3 = tC end
         end
@@ -932,13 +925,13 @@ local function createTab(tabName, isSettings)
         
         -- Slider (Left of Toggle)
         local slCont = Instance.new("Frame"); slCont.Size = UDim2.new(0.6, -60, 1, 0); slCont.Position = UDim2.new(0.4, -5, 0, 0); slCont.BackgroundTransparency = 1; slCont.ZIndex = 3; slCont.Parent = row
-        local sliderBg = Instance.new("Frame"); sliderBg.Size = UDim2.new(1, -50, 0, 6); sliderBg.Position = UDim2.new(0, 5, 0.5, -3); sliderBg.BackgroundColor3 = Color3.fromRGB(46, 46, 66); sliderBg.BorderSizePixel = 0; sliderBg.ZIndex = 4; sliderBg.Parent = slCont
+        local sliderBg = Instance.new("Frame"); sliderBg.Size = UDim2.new(1, -50, 0, 6); sliderBg.Position = UDim2.new(0, 5, 0.5, -3); sliderBg.BackgroundColor3 = Color3.fromRGB(52, 49, 68); sliderBg.BorderSizePixel = 0; sliderBg.ZIndex = 4; sliderBg.Parent = slCont
         Instance.new("UICorner", sliderBg).CornerRadius = UDim.new(1, 0)
         local fill = Instance.new("Frame"); fill.Size = UDim2.new(0, 0, 1, 0); fill.BackgroundColor3 = Color3.fromRGB(168, 130, 255); fill.BorderSizePixel = 0; fill.ZIndex = 5; fill.Parent = sliderBg
         Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
         local thumb = Instance.new("Frame"); thumb.Size = UDim2.fromOffset(12, 12); thumb.Position = UDim2.new(0, -6, 0.5, -6); thumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255); thumb.ZIndex = 6; thumb.Parent = sliderBg
         Instance.new("UICorner", thumb).CornerRadius = UDim.new(1, 0)
-        local valInput = Instance.new("TextBox"); valInput.Size = UDim2.fromOffset(35, 18); valInput.Position = UDim2.new(1, -40, 0.5, -9); valInput.BackgroundColor3 = Color3.fromRGB(22, 22, 32); valInput.BorderSizePixel = 0; valInput.Font = Enum.Font.FredokaOne; valInput.TextSize = 9; valInput.TextColor3 = Color3.fromRGB(168, 130, 255); valInput.Text = ""; valInput.ZIndex = 5; valInput.Parent = slCont
+        local valInput = Instance.new("TextBox"); valInput.Size = UDim2.fromOffset(35, 18); valInput.Position = UDim2.new(1, -40, 0.5, -9); valInput.BackgroundColor3 = Color3.fromRGB(24, 22, 32); valInput.BorderSizePixel = 0; valInput.Font = Enum.Font.GothamBlack; valInput.TextSize = 9; valInput.TextColor3 = Color3.fromRGB(168, 130, 255); valInput.Text = ""; valInput.ZIndex = 5; valInput.Parent = slCont
         Instance.new("UICorner", valInput).CornerRadius = UDim.new(0, 4)
         local inputStroke = Instance.new("UIStroke"); inputStroke.Color = Color3.fromRGB(168, 130, 255); inputStroke.Thickness = 1; inputStroke.Transparency = 0.6; inputStroke.Parent = valInput
         
@@ -975,10 +968,10 @@ local function buildSettingsTab(tabApi)
     tabApi.AddSection("Config Manager")
     updateSection("Config Manager")
 
-    local cfgRow = Instance.new("Frame"); cfgRow.Size = UDim2.new(1, 0, 0, 28); cfgRow.BackgroundColor3 = Color3.fromRGB(34, 34, 48); cfgRow.BorderSizePixel = 0; cfgRow.ZIndex = 2; cfgRow.LayoutOrder = tabApi.getNextLayoutOrder(); cfgRow.Parent = scroll
+    local cfgRow = Instance.new("Frame"); cfgRow.Size = UDim2.new(1, 0, 0, 28); cfgRow.BackgroundColor3 = Color3.fromRGB(34, 32, 46); cfgRow.BorderSizePixel = 0; cfgRow.ZIndex = 2; cfgRow.LayoutOrder = tabApi.getNextLayoutOrder(); cfgRow.Parent = scroll
     Instance.new("UICorner", cfgRow).CornerRadius = UDim.new(0, 6)
-    local cfgLbl = Instance.new("TextLabel"); cfgLbl.Size = UDim2.fromOffset(50, 28); cfgLbl.Position = UDim2.fromOffset(10, 0); cfgLbl.BackgroundTransparency = 1; cfgLbl.Font = Enum.Font.Gotham; cfgLbl.TextSize = 11; cfgLbl.TextColor3 = Color3.fromRGB(190, 190, 215); cfgLbl.TextXAlignment = Enum.TextXAlignment.Left; cfgLbl.Text = "Name"; cfgLbl.ZIndex = 3; cfgLbl.Parent = cfgRow
-    local cfgBox = Instance.new("TextBox"); cfgBox.Size = UDim2.new(1, -70, 0, 20); cfgBox.Position = UDim2.fromOffset(60, 4); cfgBox.BackgroundColor3 = Color3.fromRGB(26, 26, 38); cfgBox.BorderSizePixel = 0; cfgBox.Font = Enum.Font.Gotham; cfgBox.TextSize = 10; cfgBox.TextColor3 = Color3.fromRGB(228, 228, 242); cfgBox.PlaceholderText = "config name..."; cfgBox.PlaceholderColor3 = Color3.fromRGB(105, 103, 130); cfgBox.ClearTextOnFocus = false; cfgBox.Text = currentConfigName; cfgBox.ZIndex = 3; cfgBox.Parent = cfgRow
+    local cfgLbl = Instance.new("TextLabel"); cfgLbl.Size = UDim2.fromOffset(50, 28); cfgLbl.Position = UDim2.fromOffset(10, 0); cfgLbl.BackgroundTransparency = 1; cfgLbl.Font = Enum.Font.Gotham; cfgLbl.TextSize = 11; cfgLbl.TextColor3 = Color3.fromRGB(175, 172, 195); cfgLbl.TextXAlignment = Enum.TextXAlignment.Left; cfgLbl.Text = "Name"; cfgLbl.ZIndex = 3; cfgLbl.Parent = cfgRow
+    local cfgBox = Instance.new("TextBox"); cfgBox.Size = UDim2.new(1, -70, 0, 20); cfgBox.Position = UDim2.fromOffset(60, 4); cfgBox.BackgroundColor3 = Color3.fromRGB(28, 26, 38); cfgBox.BorderSizePixel = 0; cfgBox.Font = Enum.Font.Gotham; cfgBox.TextSize = 10; cfgBox.TextColor3 = Color3.fromRGB(224, 220, 240); cfgBox.PlaceholderText = "config name..."; cfgBox.PlaceholderColor3 = Color3.fromRGB(110, 107, 130); cfgBox.ClearTextOnFocus = false; cfgBox.Text = currentConfigName; cfgBox.ZIndex = 3; cfgBox.Parent = cfgRow
     Instance.new("UICorner", cfgBox).CornerRadius = UDim.new(0, 4)
     local cfgPad = Instance.new("UIPadding"); cfgPad.PaddingLeft = UDim.new(0, 6); cfgPad.Parent = cfgBox
 
@@ -999,18 +992,18 @@ local function buildSettingsTab(tabApi)
     refreshDropdown()
 
     local function makeToggleRow(label, on, key)
-        local row = Instance.new("Frame"); row.Size = UDim2.new(1, 0, 0, 28); row.BackgroundColor3 = Color3.fromRGB(34, 34, 48); row.BorderSizePixel = 0; row.ZIndex = 2; row.LayoutOrder = tabApi.getNextLayoutOrder(); row.Parent = scroll
-        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 6)
-        local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(1, -60, 1, 0); lbl.Position = UDim2.fromOffset(10, 0); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.Gotham; lbl.TextSize = 11; lbl.TextColor3 = Color3.fromRGB(190, 190, 215); lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Text = label; lbl.ZIndex = 3; lbl.Parent = row
-        local tf = Instance.new("Frame"); tf.Size = UDim2.fromOffset(38, 18); tf.Position = UDim2.new(1, -48, 0.5, -9); tf.BackgroundColor3 = on and Color3.fromRGB(168, 130, 255) or Color3.fromRGB(46, 46, 66); tf.BorderSizePixel = 0; tf.ZIndex = 3; tf.Parent = row
+        local row = Instance.new("Frame"); row.Size = UDim2.new(1, 0, 0, 28); row.BackgroundColor3 = Color3.fromRGB(34, 32, 46); row.BorderSizePixel = 0; row.ZIndex = 2; row.LayoutOrder = tabApi.getNextLayoutOrder(); row.Parent = scroll
+        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 10)
+        local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(1, -60, 1, 0); lbl.Position = UDim2.fromOffset(10, 0); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.Gotham; lbl.TextSize = 11; lbl.TextColor3 = Color3.fromRGB(175, 172, 195); lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Text = label; lbl.ZIndex = 3; lbl.Parent = row
+        local tf = Instance.new("Frame"); tf.Size = UDim2.fromOffset(38, 18); tf.Position = UDim2.new(1, -48, 0.5, -9); tf.BackgroundColor3 = on and Color3.fromRGB(168, 130, 255) or Color3.fromRGB(52, 49, 68); tf.BorderSizePixel = 0; tf.ZIndex = 3; tf.Parent = row
         Instance.new("UICorner", tf).CornerRadius = UDim.new(1, 0)
-        local knob = Instance.new("Frame"); knob.Size = UDim2.fromOffset(14, 14); knob.Position = on and UDim2.fromOffset(22, 2) or UDim2.fromOffset(2, 2); knob.BackgroundColor3 = on and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(110, 108, 140); knob.ZIndex = 4; knob.Parent = tf
+        local knob = Instance.new("Frame"); knob.Size = UDim2.fromOffset(14, 14); knob.Position = on and UDim2.fromOffset(22, 2) or UDim2.fromOffset(2, 2); knob.BackgroundColor3 = on and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(140, 137, 158); knob.ZIndex = 4; knob.Parent = tf
         Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
         local btn = Instance.new("TextButton"); btn.Size = UDim2.new(1, 0, 1, 0); btn.BackgroundTransparency = 1; btn.Text = ""; btn.ZIndex = 5; btn.Parent = row
         btn.MouseButton1Click:Connect(function()
             settings[key] = not settings[key]; writeSettings(settings); local o = settings[key]
-            TweenService:Create(knob, TweenInfo.new(0.2), {Position = o and UDim2.fromOffset(22, 2) or UDim2.fromOffset(2, 2), BackgroundColor3 = o and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(110, 108, 140)}):Play()
-            TweenService:Create(tf, TweenInfo.new(0.2), {BackgroundColor3 = o and Color3.fromRGB(168, 130, 255) or Color3.fromRGB(46, 46, 66)}):Play()
+            TweenService:Create(knob, TweenInfo.new(0.2), {Position = o and UDim2.fromOffset(22, 2) or UDim2.fromOffset(2, 2), BackgroundColor3 = o and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(140, 137, 158)}):Play()
+            TweenService:Create(tf, TweenInfo.new(0.2), {BackgroundColor3 = o and Color3.fromRGB(168, 130, 255) or Color3.fromRGB(52, 49, 68)}):Play()
             updateStatus(label .. ": " .. (o and "ON" or "OFF"))
         end)
         return row
@@ -1023,11 +1016,16 @@ local function buildSettingsTab(tabApi)
     local al = Instance.new("UIListLayout"); al.FillDirection = Enum.FillDirection.Horizontal; al.Padding = UDim.new(0, 4); al.Parent = actionsRow
 
     local function makeBtn(text, w, isRed)
-        local baseColor = isRed and Color3.fromRGB(205, 75, 100) or Color3.fromRGB(168, 130, 255)
-        local hoverColor = isRed and Color3.fromRGB(245, 110, 135) or Color3.fromRGB(200, 170, 255)
-        local textColor = isRed and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(28, 20, 48)
-        local btn = Instance.new("TextButton"); btn.Size = UDim2.fromOffset(w or 50, 24); btn.BackgroundColor3 = baseColor; btn.BorderSizePixel = 0; btn.Font = Enum.Font.FredokaOne; btn.TextSize = 9; btn.TextColor3 = textColor; btn.Text = text; btn.AutoButtonColor = false; btn.ZIndex = 2
-        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 5)
+        local baseColor = isRed and Color3.fromRGB(205, 80, 100) or Color3.fromRGB(168, 130, 255)
+        local hoverColor = isRed and Color3.fromRGB(235, 110, 140) or Color3.fromRGB(200, 175, 255)
+        local textColor = isRed and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(22, 18, 34)
+        local btn = Instance.new("TextButton"); btn.Size = UDim2.fromOffset(w or 50, 24); btn.BackgroundColor3 = baseColor; btn.BorderSizePixel = 0; btn.Font = Enum.Font.GothamBlack; btn.TextSize = 9; btn.TextColor3 = textColor; btn.Text = text; btn.AutoButtonColor = false; btn.ZIndex = 2
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+        if not isRed then
+            local btnGrad = Instance.new("UIGradient")
+            btnGrad.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(168, 130, 255)), ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 175, 255))})
+            btnGrad.Rotation = 20; btnGrad.Parent = btn
+        end
         btn.MouseEnter:Connect(function() TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = hoverColor}):Play() end)
         btn.MouseLeave:Connect(function() TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = baseColor}):Play() end)
         return btn
@@ -1076,7 +1074,7 @@ local function buildSettingsTab(tabApi)
 
     tabApi.AddToggle({
         id = "animated_bg_toggle",
-        label = "Animated Background",
+        label = "Animated Drip Background",
         default = settings.animatedBg,
         onChange = function(v)
             settings.animatedBg = v
@@ -1124,10 +1122,10 @@ if settings.autoSave then
     end)
 end
 
-getgenv().NovaUI = {CreateTab = createTab, createTab = createTab, SaveConfig = saveConfig, LoadConfig = loadConfig, ResetConfig = resetCurrentConfig, CreateConfig = createConfig, ListConfigs = listConfigs, SetActiveTab = setTabActive, UpdateSection = updateSection, ShowPrompt = showPrompt, ShowUI = PlayIntro, UI = UI}
+getgenv().AetherUI = {CreateTab = createTab, createTab = createTab, SaveConfig = saveConfig, LoadConfig = loadConfig, ResetConfig = resetCurrentConfig, CreateConfig = createConfig, ListConfigs = listConfigs, SetActiveTab = setTabActive, UpdateSection = updateSection, ShowPrompt = showPrompt, ShowUI = PlayIntro, UI = UI}
 
 
 
-if RunService:IsStudio() then warn("NovaUI loaded in Studio. Use an executor for file APIs.") end
+if RunService:IsStudio() then warn("Aether UI loaded in Studio. Use an executor for file APIs.") end
 
-return getgenv().NovaUI
+return getgenv().AetherUI
