@@ -1,17 +1,24 @@
 --[[
 	CrystalUILib
-	Biblioteca de UI gerada a partir do design "Crystal" (Window/Main/Tabs/TabPages).
+	Biblioteca ddddxe UI gerada a partir do design "Crystal" (Window/Main/Tabs/TabPages).
+	Componentes agora usam o mesmo estilo visual/animações da NovaUI (acento violeta,
+	toggles deslizantes, slider com campo editável, dropdown animado).
+
 	Uso básico:
 
 		local Lib = loadstring(readfile("CrystalUILib.lua"))() -- ou require(modulo)
 		local Window = Lib.new("Crystal")
 
 		local Home = Window:CreateTab("Home", "rbxassetid://73551258618338", "View your and server's information")
+		Home:AddSection("Geral")
 		Home:AddLabel("Bem-vindo")
+		Home:AddText("Um texto informativo menor, sem interação.")
 		Home:AddButton("Rejoin", function() print("rejoin") end)
 		Home:AddToggle("Auto Farm", false, function(state) print(state) end)
 		Home:AddSlider("Velocidade", 0, 100, 50, function(v) print(v) end)
 		Home:AddDropdown("Modo", {"Passivo","Agressivo"}, function(opt) print(opt) end)
+		Home:AddKeybind("Tecla", "None", function(key) print(key) end)
+		Home:AddToggleSlider("Auto Aim", false, 0, 100, 50, function(state) print(state) end, function(v) print(v) end)
 ]]
 
 local TweenService = game:GetService("TweenService")
@@ -48,16 +55,26 @@ local function applyStrokeGradient(target, c1, c2)
 	return stroke
 end
 
+local ACCENT = Color3.fromRGB(168, 130, 255)
+local ACCENT_LIGHT = Color3.fromRGB(200, 170, 255)
+local ACCENT_DARK_TEXT = Color3.fromRGB(28, 20, 48)
+local BG_CARD = Color3.fromRGB(34, 34, 48)
+local BG_CARD_HOVER = Color3.fromRGB(40, 40, 58)
+local BG_TRACK = Color3.fromRGB(46, 46, 66)
+local TEXT_PRIMARY = Color3.fromRGB(228, 228, 242)
+local TEXT_SECONDARY = Color3.fromRGB(190, 190, 215)
+local TEXT_MUTED = Color3.fromRGB(150, 148, 175)
+local KNOB_OFF = Color3.fromRGB(110, 108, 140)
+
 local function card(parent, height, order)
 	local c = new("Frame", {
-		BackgroundColor3 = Color3.fromRGB(20, 20, 20),
-		BackgroundTransparency = 0.5,
+		BackgroundColor3 = BG_CARD,
+		BackgroundTransparency = 0,
 		BorderSizePixel = 0,
 		Size = UDim2.new(0.88, 0, 0, height or 50),
 		LayoutOrder = order or 0,
 	})
-	new("UICorner", { CornerRadius = UDim.new(0, 10) }).Parent = c
-	applyStrokeGradient(c, Color3.fromRGB(23, 23, 23), Color3.fromRGB(36, 36, 36))
+	new("UICorner", { CornerRadius = UDim.new(0, 8) }).Parent = c
 	return c
 end
 
@@ -85,14 +102,14 @@ function Library.new(title, subtitle)
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.fromScale(0.4, 0.5),
-		BackgroundColor3 = Color3.fromRGB(23, 23, 23),
+		BackgroundColor3 = Color3.fromRGB(16, 16, 24),
 		BackgroundTransparency = 0.1,
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
 	})
 	self.Window.Parent = self.ScreenGui
 	new("UICorner", { CornerRadius = UDim.new(0.045, 0) }).Parent = self.Window
-	applyStrokeGradient(self.Window, Color3.fromRGB(23, 23, 23), Color3.fromRGB(66, 66, 66))
+	applyStrokeGradient(self.Window, Color3.fromRGB(190, 150, 255), Color3.fromRGB(100, 210, 255))
 
 	local main = new("Frame", { Name = "Main", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1) })
 	main.Parent = self.Window
@@ -107,7 +124,7 @@ function Library.new(title, subtitle)
 		Size = UDim2.new(0.6, 0, 0.35, 0),
 		BackgroundTransparency = 1,
 		Text = title or "Crystal",
-		TextColor3 = Color3.fromRGB(254, 253, 255),
+		TextColor3 = Color3.fromRGB(205, 185, 255),
 		TextScaled = true,
 		Font = Enum.Font.GothamMedium,
 	}).Parent = titleBar
@@ -203,8 +220,12 @@ end
 function Library:SelectTab(tab)
 	if self.CurrentTab then
 		self.CurrentTab.Page.Visible = false
+		TweenService:Create(self.CurrentTab.Button, TweenInfo.new(0.2), { BackgroundColor3 = BG_CARD }):Play()
+		TweenService:Create(self.CurrentTab.Indicator, TweenInfo.new(0.2), { BackgroundTransparency = 1 }):Play()
 	end
 	tab.Page.Visible = true
+	TweenService:Create(tab.Button, TweenInfo.new(0.2), { BackgroundColor3 = BG_CARD_HOVER }):Play()
+	TweenService:Create(tab.Indicator, TweenInfo.new(0.2), { BackgroundTransparency = 0 }):Play()
 	self.CurrentTab = tab
 end
 
@@ -215,15 +236,35 @@ function Library:CreateTab(name, icon, description)
 		Name = name,
 		Text = "",
 		AutoButtonColor = false,
-		BackgroundColor3 = Color3.fromRGB(20, 20, 20),
-		BackgroundTransparency = 0.5,
+		BackgroundColor3 = BG_CARD,
+		BackgroundTransparency = 0,
 		BorderSizePixel = 0,
 		LayoutOrder = index,
 		Size = UDim2.new(0.88, 0, 0.17, 0),
 	})
 	button.Parent = self.TabsContainer
 	new("UICorner", { CornerRadius = UDim.new(0.215, 0) }).Parent = button
-	applyStrokeGradient(button, Color3.fromRGB(23, 23, 23), Color3.fromRGB(36, 36, 36))
+
+	local indicator = new("Frame", {
+		Name = "Indicator",
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0.02, 0, 0.5, 0),
+		Size = UDim2.new(0, 3, 0.5, 0),
+		BackgroundColor3 = ACCENT,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+	})
+	indicator.Parent = button
+	new("UICorner", { CornerRadius = UDim.new(1, 0) }).Parent = indicator
+
+	button.MouseEnter:Connect(function()
+		if self.CurrentTab and self.CurrentTab.Button == button then return end
+		TweenService:Create(button, TweenInfo.new(0.15), { BackgroundColor3 = BG_CARD_HOVER }):Play()
+	end)
+	button.MouseLeave:Connect(function()
+		if self.CurrentTab and self.CurrentTab.Button == button then return end
+		TweenService:Create(button, TweenInfo.new(0.15), { BackgroundColor3 = BG_CARD }):Play()
+	end)
 
 	if icon then
 		new("ImageLabel", {
@@ -275,6 +316,8 @@ function Library:CreateTab(name, icon, description)
 		Size = UDim2.fromScale(1, 1),
 		Visible = false,
 		ScrollBarThickness = 3,
+		ScrollBarImageColor3 = ACCENT_LIGHT,
+		ScrollBarImageTransparency = 0.4,
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		CanvasSize = UDim2.new(0, 0, 0, 0),
 	})
@@ -286,7 +329,7 @@ function Library:CreateTab(name, icon, description)
 	}).Parent = page
 	new("UIPadding", { PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10) }).Parent = page
 
-	local tab = setmetatable({ Button = button, Page = page, Library = self, _order = 0 }, TabMethods)
+	local tab = setmetatable({ Button = button, Page = page, Library = self, _order = 0, Indicator = indicator }, TabMethods)
 
 	button.MouseButton1Click:Connect(function()
 		self:SelectTab(tab)
@@ -307,12 +350,63 @@ local function nextOrder(tab)
 	return tab._order
 end
 
+function TabMethods:AddSection(name)
+	local f = new("Frame", {
+		BackgroundTransparency = 1,
+		Size = UDim2.new(0.88, 0, 0, 24),
+		LayoutOrder = nextOrder(self),
+	})
+	f.Parent = self.Page
+
+	new("Frame", {
+		BackgroundColor3 = Color3.fromRGB(70, 68, 95),
+		BorderSizePixel = 0,
+		Size = UDim2.new(0.3, -8, 0, 1),
+		Position = UDim2.new(0, 0, 0.5, 0),
+	}).Parent = f
+
+	new("TextLabel", {
+		Text = name,
+		TextColor3 = ACCENT_LIGHT,
+		Font = Enum.Font.GothamMedium,
+		TextSize = 12,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(0.4, 0, 1, 0),
+		Position = UDim2.new(0.3, 0, 0, 0),
+	}).Parent = f
+
+	new("Frame", {
+		BackgroundColor3 = Color3.fromRGB(70, 68, 95),
+		BorderSizePixel = 0,
+		Size = UDim2.new(0.3, -8, 0, 1),
+		Position = UDim2.new(0.7, 8, 0.5, 0),
+	}).Parent = f
+
+	return f
+end
+
+function TabMethods:AddText(text, color, size)
+	local lbl = new("TextLabel", {
+		Text = text,
+		TextColor3 = color or TEXT_MUTED,
+		Font = Enum.Font.Gotham,
+		TextSize = size or 13,
+		TextWrapped = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(0.88, 0, 0, (size or 13) + 8),
+		LayoutOrder = nextOrder(self),
+	})
+	lbl.Parent = self.Page
+	return lbl
+end
+
 function TabMethods:AddLabel(text)
 	local c = card(self.Page, 36, nextOrder(self))
 	new("TextLabel", {
 		Text = text,
-		TextColor3 = Color3.fromRGB(234, 234, 234),
-		Font = Enum.Font.Gotham,
+		TextColor3 = TEXT_PRIMARY,
+		Font = Enum.Font.GothamMedium,
 		TextSize = 16,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		BackgroundTransparency = 1,
@@ -323,68 +417,98 @@ function TabMethods:AddLabel(text)
 end
 
 function TabMethods:AddButton(text, callback)
-	local c = card(self.Page, 44, nextOrder(self))
+	local c = card(self.Page, 40, nextOrder(self))
 	local btn = new("TextButton", {
-		Text = text,
-		TextColor3 = Color3.fromRGB(234, 234, 234),
-		Font = Enum.Font.GothamMedium,
-		TextSize = 16,
+		Text = "",
 		BackgroundTransparency = 1,
 		Size = UDim2.fromScale(1, 1),
 		AutoButtonColor = false,
 	})
 	btn.Parent = c
+
+	new("TextLabel", {
+		Text = text,
+		TextColor3 = TEXT_SECONDARY,
+		Font = Enum.Font.GothamMedium,
+		TextSize = 15,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, -40, 1, 0),
+		Position = UDim2.new(0.05, 0, 0, 0),
+	}).Parent = btn
+
+	local icon = new("TextLabel", {
+		Text = "\u{203A}",
+		TextColor3 = ACCENT,
+		Font = Enum.Font.GothamBold,
+		TextSize = 16,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(0, 30, 1, 0),
+		Position = UDim2.new(1, -35, 0, 0),
+	})
+	icon.Parent = btn
+
+	btn.MouseEnter:Connect(function()
+		TweenService:Create(c, TweenInfo.new(0.15), { BackgroundColor3 = BG_CARD_HOVER }):Play()
+		TweenService:Create(icon, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { TextSize = 19 }):Play()
+	end)
+	btn.MouseLeave:Connect(function()
+		TweenService:Create(c, TweenInfo.new(0.15), { BackgroundColor3 = BG_CARD }):Play()
+		TweenService:Create(icon, TweenInfo.new(0.15), { TextSize = 16 }):Play()
+	end)
+
 	btn.MouseButton1Click:Connect(function()
 		if callback then
 			callback()
 		end
 	end)
+
 	return c
 end
 
 function TabMethods:AddToggle(text, default, callback)
-	local c = card(self.Page, 44, nextOrder(self))
+	local c = card(self.Page, 40, nextOrder(self))
 	local state = default and true or false
 
 	new("TextLabel", {
 		Text = text,
-		TextColor3 = Color3.fromRGB(234, 234, 234),
+		TextColor3 = TEXT_SECONDARY,
 		Font = Enum.Font.Gotham,
-		TextSize = 16,
+		TextSize = 15,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		BackgroundTransparency = 1,
-		Size = UDim2.new(0.65, 0, 1, 0),
+		Size = UDim2.new(0.6, 0, 1, 0),
 		Position = UDim2.new(0.05, 0, 0, 0),
 	}).Parent = c
 
-	local knob = new("TextButton", {
-		Text = "",
-		AutoButtonColor = false,
+	local track = new("Frame", {
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(0.95, 0, 0.5, 0),
-		Size = UDim2.new(0, 40, 0, 20),
-		BackgroundColor3 = state and Color3.fromRGB(120, 40, 40) or Color3.fromRGB(40, 40, 40),
+		Size = UDim2.new(0, 38, 0, 18),
+		BackgroundColor3 = state and ACCENT or BG_TRACK,
 		BorderSizePixel = 0,
 	})
-	knob.Parent = c
+	track.Parent = c
+	new("UICorner", { CornerRadius = UDim.new(1, 0) }).Parent = track
+
+	local knob = new("Frame", {
+		Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7),
+		Size = UDim2.new(0, 14, 0, 14),
+		BackgroundColor3 = state and Color3.new(1, 1, 1) or KNOB_OFF,
+		BorderSizePixel = 0,
+	})
+	knob.Parent = track
 	new("UICorner", { CornerRadius = UDim.new(1, 0) }).Parent = knob
 
-	local dot = new("Frame", {
-		AnchorPoint = Vector2.new(state and 1 or 0, 0.5),
-		Position = state and UDim2.new(1, -2, 0.5, 0) or UDim2.new(0, 2, 0.5, 0),
-		Size = UDim2.new(0, 16, 0, 16),
-		BackgroundColor3 = Color3.fromRGB(230, 230, 230),
-		BorderSizePixel = 0,
-	})
-	dot.Parent = knob
-	new("UICorner", { CornerRadius = UDim.new(1, 0) }).Parent = dot
+	local btn = new("TextButton", { Text = "", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1) })
+	btn.Parent = c
 
-	knob.MouseButton1Click:Connect(function()
+	btn.MouseButton1Click:Connect(function()
 		state = not state
-		knob.BackgroundColor3 = state and Color3.fromRGB(120, 40, 40) or Color3.fromRGB(40, 40, 40)
-		TweenService:Create(dot, TweenInfo.new(0.15), {
-			Position = state and UDim2.new(1, -2, 0.5, 0) or UDim2.new(0, 2, 0.5, 0),
-			AnchorPoint = Vector2.new(state and 1 or 0, 0.5),
+		TweenService:Create(track, TweenInfo.new(0.2, Enum.EasingStyle.Quint), { BackgroundColor3 = state and ACCENT or BG_TRACK }):Play()
+		TweenService:Create(knob, TweenInfo.new(0.2, Enum.EasingStyle.Quint), {
+			Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7),
+			BackgroundColor3 = state and Color3.new(1, 1, 1) or KNOB_OFF,
 		}):Play()
 		if callback then
 			callback(state)
@@ -395,48 +519,79 @@ function TabMethods:AddToggle(text, default, callback)
 end
 
 function TabMethods:AddSlider(text, min, max, default, callback)
-	local c = card(self.Page, 52, nextOrder(self))
+	local c = card(self.Page, 40, nextOrder(self))
 	local value = math.clamp(default or min, min, max)
 
-	local label = new("TextLabel", {
-		Text = text .. ": " .. tostring(value),
-		TextColor3 = Color3.fromRGB(234, 234, 234),
+	new("TextLabel", {
+		Text = text,
+		TextColor3 = TEXT_SECONDARY,
 		Font = Enum.Font.Gotham,
 		TextSize = 15,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		BackgroundTransparency = 1,
-		Size = UDim2.new(0.9, 0, 0, 20),
-		Position = UDim2.new(0.05, 0, 0, 2),
-	})
-	label.Parent = c
+		Size = UDim2.new(0.4, -10, 1, 0),
+		Position = UDim2.new(0.05, 0, 0, 0),
+	}).Parent = c
 
 	local track = new("Frame", {
-		BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(0.95, -48, 0.5, 0),
+		Size = UDim2.new(0.45, 0, 0, 6),
+		BackgroundColor3 = BG_TRACK,
 		BorderSizePixel = 0,
-		Size = UDim2.new(0.9, 0, 0, 6),
-		Position = UDim2.new(0.05, 0, 0, 32),
 	})
 	track.Parent = c
 	new("UICorner", { CornerRadius = UDim.new(1, 0) }).Parent = track
 
 	local fillScale = (value - min) / (max - min)
 	local fill = new("Frame", {
-		BackgroundColor3 = Color3.fromRGB(120, 40, 40),
+		BackgroundColor3 = ACCENT,
 		BorderSizePixel = 0,
 		Size = UDim2.new(fillScale, 0, 1, 0),
 	})
 	fill.Parent = track
 	new("UICorner", { CornerRadius = UDim.new(1, 0) }).Parent = fill
 
-	local dragging = false
-	local function setFromX(x)
-		local rel = math.clamp((x - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
-		value = math.floor(min + (max - min) * rel + 0.5)
+	local thumb = new("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(fillScale, 0, 0.5, 0),
+		Size = UDim2.new(0, 12, 0, 12),
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		BorderSizePixel = 0,
+	})
+	thumb.Parent = track
+	new("UICorner", { CornerRadius = UDim.new(1, 0) }).Parent = thumb
+
+	local valueBox = new("TextBox", {
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(0.95, 0, 0.5, 0),
+		Size = UDim2.new(0, 40, 0, 20),
+		BackgroundColor3 = Color3.fromRGB(22, 22, 32),
+		BorderSizePixel = 0,
+		Font = Enum.Font.GothamMedium,
+		TextSize = 12,
+		TextColor3 = ACCENT,
+		Text = tostring(value),
+		ClearTextOnFocus = false,
+	})
+	valueBox.Parent = c
+	new("UICorner", { CornerRadius = UDim.new(0, 4) }).Parent = valueBox
+
+	local function setValue(v)
+		value = math.clamp(math.floor(v + 0.5), min, max)
+		local rel = (value - min) / (max - min)
 		fill.Size = UDim2.new(rel, 0, 1, 0)
-		label.Text = text .. ": " .. tostring(value)
+		thumb.Position = UDim2.new(rel, 0, 0.5, 0)
+		valueBox.Text = tostring(value)
 		if callback then
 			callback(value)
 		end
+	end
+
+	local dragging = false
+	local function setFromX(x)
+		local rel = math.clamp((x - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
+		setValue(min + (max - min) * rel)
 	end
 
 	track.InputBegan:Connect(function(input)
@@ -456,54 +611,86 @@ function TabMethods:AddSlider(text, min, max, default, callback)
 		end
 	end)
 
+	valueBox.FocusLost:Connect(function()
+		local n = tonumber(valueBox.Text)
+		if n then
+			setValue(n)
+		else
+			valueBox.Text = tostring(value)
+		end
+	end)
+
 	return c
 end
 
 function TabMethods:AddDropdown(text, options, callback)
 	local expanded = false
-	local c = card(self.Page, 44, nextOrder(self))
+	local c = card(self.Page, 40, nextOrder(self))
 	c.ClipsDescendants = true
 
 	local header = new("TextButton", {
 		Text = "",
 		AutoButtonColor = false,
 		BackgroundTransparency = 1,
-		Size = UDim2.new(1, 0, 0, 44),
+		Size = UDim2.new(1, 0, 0, 40),
 	})
 	header.Parent = c
 
 	local label = new("TextLabel", {
 		Text = text .. (options[1] and (": " .. options[1]) or ""),
-		TextColor3 = Color3.fromRGB(234, 234, 234),
+		TextColor3 = TEXT_SECONDARY,
 		Font = Enum.Font.GothamMedium,
-		TextSize = 16,
+		TextSize = 15,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		BackgroundTransparency = 1,
-		Size = UDim2.new(0.85, 0, 1, 0),
+		Size = UDim2.new(0.8, 0, 1, 0),
 		Position = UDim2.new(0.05, 0, 0, 0),
 	})
 	label.Parent = header
 
+	local arrow = new("TextLabel", {
+		Text = "\u{25BC}",
+		TextColor3 = KNOB_OFF,
+		Font = Enum.Font.GothamBold,
+		TextSize = 10,
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(0.95, 0, 0.5, 0),
+		Size = UDim2.new(0, 16, 0, 16),
+	})
+	arrow.Parent = header
+
 	local list = new("Frame", {
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0, 0, 0, 44),
-		Size = UDim2.new(1, 0, 0, #options * 32),
+		Position = UDim2.new(0, 0, 0, 40),
+		Size = UDim2.new(1, 0, 0, #options * 30),
 	})
 	list.Parent = c
-	new("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder }).Parent = list
+	new("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2) }).Parent = list
+	new("UIPadding", { PaddingTop = UDim.new(0, 2) }).Parent = list
 
 	for _, opt in ipairs(options) do
 		local optBtn = new("TextButton", {
-			Text = opt,
-			TextColor3 = Color3.fromRGB(200, 200, 200),
+			Text = "  " .. opt,
+			TextColor3 = TEXT_PRIMARY,
 			Font = Enum.Font.Gotham,
-			TextSize = 14,
+			TextSize = 13,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			BackgroundTransparency = 1,
-			Size = UDim2.new(1, 0, 0, 32),
+			BackgroundColor3 = Color3.fromRGB(26, 26, 38),
+			BorderSizePixel = 0,
+			AutoButtonColor = false,
+			Size = UDim2.new(0.94, 0, 0, 26),
+			Position = UDim2.new(0.03, 0, 0, 0),
 		})
 		optBtn.Parent = list
-		new("UIPadding", { PaddingLeft = UDim.new(0.08, 0) }).Parent = optBtn
+		new("UICorner", { CornerRadius = UDim.new(0, 5) }).Parent = optBtn
+
+		optBtn.MouseEnter:Connect(function()
+			TweenService:Create(optBtn, TweenInfo.new(0.1), { BackgroundColor3 = ACCENT, TextColor3 = ACCENT_DARK_TEXT }):Play()
+		end)
+		optBtn.MouseLeave:Connect(function()
+			TweenService:Create(optBtn, TweenInfo.new(0.1), { BackgroundColor3 = Color3.fromRGB(26, 26, 38), TextColor3 = TEXT_PRIMARY }):Play()
+		end)
 
 		optBtn.MouseButton1Click:Connect(function()
 			label.Text = text .. ": " .. opt
@@ -515,8 +702,184 @@ function TabMethods:AddDropdown(text, options, callback)
 
 	header.MouseButton1Click:Connect(function()
 		expanded = not expanded
-		local targetHeight = expanded and (44 + #options * 32) or 44
-		TweenService:Create(c, TweenInfo.new(0.15), { Size = UDim2.new(0.88, 0, 0, targetHeight) }):Play()
+		local targetHeight = expanded and (40 + #options * 30 + 4) or 40
+		TweenService:Create(c, TweenInfo.new(0.2, Enum.EasingStyle.Quint), { Size = UDim2.new(0.88, 0, 0, targetHeight) }):Play()
+		TweenService:Create(arrow, TweenInfo.new(0.2), { Rotation = expanded and 180 or 0 }):Play()
+	end)
+
+	return c
+end
+
+function TabMethods:AddKeybind(text, default, callback)
+	local c = card(self.Page, 40, nextOrder(self))
+
+	new("TextLabel", {
+		Text = text,
+		TextColor3 = TEXT_SECONDARY,
+		Font = Enum.Font.Gotham,
+		TextSize = 15,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(0.6, 0, 1, 0),
+		Position = UDim2.new(0.05, 0, 0, 0),
+	}).Parent = c
+
+	local keyBtn = new("TextButton", {
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(0.95, 0, 0.5, 0),
+		Size = UDim2.new(0, 70, 0, 22),
+		BackgroundColor3 = Color3.fromRGB(40, 40, 57),
+		BorderSizePixel = 0,
+		Font = Enum.Font.GothamMedium,
+		TextSize = 12,
+		TextColor3 = ACCENT_LIGHT,
+		Text = default or "None",
+		AutoButtonColor = false,
+	})
+	keyBtn.Parent = c
+	new("UICorner", { CornerRadius = UDim.new(0, 5) }).Parent = keyBtn
+
+	local currentKey = default or "None"
+	local listening = false
+
+	keyBtn.MouseButton1Click:Connect(function()
+		if listening then
+			return
+		end
+		listening = true
+		keyBtn.Text = "..."
+		local conn
+		conn = UserInputService.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.Keyboard then
+				currentKey = input.KeyCode.Name
+				keyBtn.Text = currentKey
+				listening = false
+				conn:Disconnect()
+				if callback then
+					callback(currentKey)
+				end
+			end
+		end)
+	end)
+
+	return c
+end
+
+function TabMethods:AddToggleSlider(text, defaultToggle, min, max, defaultSlider, callbackToggle, callbackSlider)
+	local c = card(self.Page, 46, nextOrder(self))
+	local state = defaultToggle and true or false
+	local value = math.clamp(defaultSlider or min, min, max)
+
+	new("TextLabel", {
+		Text = text,
+		TextColor3 = TEXT_SECONDARY,
+		Font = Enum.Font.Gotham,
+		TextSize = 14,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(0.35, -10, 1, 0),
+		Position = UDim2.new(0.05, 0, 0, 0),
+	}).Parent = c
+
+	-- Toggle (direita)
+	local track = new("Frame", {
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(0.95, 0, 0.5, 0),
+		Size = UDim2.new(0, 38, 0, 18),
+		BackgroundColor3 = state and ACCENT or BG_TRACK,
+		BorderSizePixel = 0,
+	})
+	track.Parent = c
+	new("UICorner", { CornerRadius = UDim.new(1, 0) }).Parent = track
+
+	local knob = new("Frame", {
+		Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7),
+		Size = UDim2.new(0, 14, 0, 14),
+		BackgroundColor3 = state and Color3.new(1, 1, 1) or KNOB_OFF,
+		BorderSizePixel = 0,
+	})
+	knob.Parent = track
+	new("UICorner", { CornerRadius = UDim.new(1, 0) }).Parent = knob
+
+	local toggleBtn = new("TextButton", {
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(0.95, 0, 0.5, 0),
+		Size = UDim2.new(0, 44, 1, 0),
+		BackgroundTransparency = 1,
+		Text = "",
+	})
+	toggleBtn.Parent = c
+
+	toggleBtn.MouseButton1Click:Connect(function()
+		state = not state
+		TweenService:Create(track, TweenInfo.new(0.2, Enum.EasingStyle.Quint), { BackgroundColor3 = state and ACCENT or BG_TRACK }):Play()
+		TweenService:Create(knob, TweenInfo.new(0.2, Enum.EasingStyle.Quint), {
+			Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7),
+			BackgroundColor3 = state and Color3.new(1, 1, 1) or KNOB_OFF,
+		}):Play()
+		if callbackToggle then
+			callbackToggle(state)
+		end
+	end)
+
+	-- Slider (esquerda do toggle)
+	local sliderTrack = new("Frame", {
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(0.95, -50, 0.5, 0),
+		Size = UDim2.new(0.42, 0, 0, 6),
+		BackgroundColor3 = BG_TRACK,
+		BorderSizePixel = 0,
+	})
+	sliderTrack.Parent = c
+	new("UICorner", { CornerRadius = UDim.new(1, 0) }).Parent = sliderTrack
+
+	local sliderFillScale = (value - min) / (max - min)
+	local sliderFill = new("Frame", {
+		BackgroundColor3 = ACCENT,
+		BorderSizePixel = 0,
+		Size = UDim2.new(sliderFillScale, 0, 1, 0),
+	})
+	sliderFill.Parent = sliderTrack
+	new("UICorner", { CornerRadius = UDim.new(1, 0) }).Parent = sliderFill
+
+	local sliderThumb = new("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(sliderFillScale, 0, 0.5, 0),
+		Size = UDim2.new(0, 10, 0, 10),
+		BackgroundColor3 = Color3.new(1, 1, 1),
+		BorderSizePixel = 0,
+	})
+	sliderThumb.Parent = sliderTrack
+	new("UICorner", { CornerRadius = UDim.new(1, 0) }).Parent = sliderThumb
+
+	local function setSliderValue(v)
+		value = math.clamp(math.floor(v + 0.5), min, max)
+		local rel = (value - min) / (max - min)
+		sliderFill.Size = UDim2.new(rel, 0, 1, 0)
+		sliderThumb.Position = UDim2.new(rel, 0, 0.5, 0)
+		if callbackSlider then
+			callbackSlider(value)
+		end
+	end
+
+	local dragging = false
+	sliderTrack.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			local rel = math.clamp((input.Position.X - sliderTrack.AbsolutePosition.X) / sliderTrack.AbsoluteSize.X, 0, 1)
+			setSliderValue(min + (max - min) * rel)
+		end
+	end)
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			local rel = math.clamp((input.Position.X - sliderTrack.AbsolutePosition.X) / sliderTrack.AbsoluteSize.X, 0, 1)
+			setSliderValue(min + (max - min) * rel)
+		end
+	end)
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = false
+		end
 	end)
 
 	return c
