@@ -1,4 +1,4 @@
--- NovaUI Config Manager (Executor-ready)
+-- NovaUI Config Manxager (Executor-ready)
 if getgenv().NovaUILoaded then return end
 getgenv().NovaUILoaded = true
 
@@ -341,7 +341,7 @@ local function buildUI()
     mobileBtn.Position = UDim2.new(0.5, -22, 0.1, 0)
     mobileBtn.BackgroundColor3 = Color3.fromRGB(16, 16, 24) -- Same as main UI
     mobileBtn.BackgroundTransparency = 0.2
-    mobileBtn.Text = "🍯"
+    mobileBtn.Text = "✦"
     mobileBtn.Font = Enum.Font.FredokaOne
     mobileBtn.TextSize = 22
     mobileBtn.TextColor3 = Color3.fromRGB(205, 185, 255)
@@ -1076,7 +1076,7 @@ local function buildSettingsTab(tabApi)
 
     tabApi.AddToggle({
         id = "animated_bg_toggle",
-        label = "Animated Drip Background",
+        label = "Animated Background",
         default = settings.animatedBg,
         onChange = function(v)
             settings.animatedBg = v
