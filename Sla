@@ -1,4 +1,4 @@
--- // ZyronX UI Library (Core Engine) - Modern Glass Design
+-- // ZyronX UIzzd Librarxy (Core Engine) - Modern Glass Design
 
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -130,15 +130,14 @@ local function MakeDraggable(topbar, object)
     end)
 end
 
--- // Modern Color Palette - Glassmorphism + Neon Accents
-local AccentColor = Color3.fromRGB(0, 200, 255) -- Cyan Neon
-local AccentColor2 = Color3.fromRGB(150, 50, 255) -- Purple
+-- // Modern Color Palette - Glassmorphism
+local AccentColor = Color3.fromRGB(0, 200, 255)
+local AccentColor2 = Color3.fromRGB(150, 50, 255)
 local BackgroundColor = Color3.fromRGB(10, 10, 15)
 local CardColor = Color3.fromRGB(18, 18, 25)
 local HoverColor = Color3.fromRGB(30, 30, 45)
 local TextColor = Color3.fromRGB(255, 255, 255)
 local SubTextColor = Color3.fromRGB(160, 160, 180)
-local GlassColor = Color3.fromRGB(255, 255, 255)
 
 -- // Global Notification API
 local GlobalNotifContainer
@@ -152,7 +151,6 @@ function Library:Notify(options)
     local Notif = Create("Frame", {Parent = GlobalNotifContainer, BackgroundColor3 = Color3.fromRGB(15, 15, 22), Size = UDim2.new(1, 0, 0, 65), BackgroundTransparency = 0.1, ZIndex = 201, ClipsDescendants = true})
     Create("UICorner", {Parent = Notif, CornerRadius = UDim.new(0, 12)})
     local Stroke = Create("UIStroke", {Parent = Notif, Color = AccentColor, Thickness = 1.5, Transparency = 0.3})
-    Create("UIGradient", {Parent = Stroke, Color = ColorSequence.new(AccentColor, AccentColor2), Rotation = 45})
 
     local TitleText = Create("TextLabel", {Parent = Notif, Text = title, Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = TextColor, BackgroundTransparency = 1, Position = UDim2.new(0, 15, 0, 15), Size = UDim2.new(1, -30, 0, 15), TextXAlignment = Enum.TextXAlignment.Left, TextTransparency = 0.3, ZIndex = 202})
     local DescText = Create("TextLabel", {Parent = Notif, Text = desc, Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = SubTextColor, BackgroundTransparency = 1, Position = UDim2.new(0, 15, 0, 32), Size = UDim2.new(1, -30, 0, 15), TextXAlignment = Enum.TextXAlignment.Left, TextTransparency = 0.3, ZIndex = 202})
@@ -266,7 +264,6 @@ function Library:CreateWindow(options)
     Create("UIStroke", {Parent = InfoCard, Color = AccentColor, Thickness = 1.5, Transparency = 0.3})
     local InfoScale = Create("UIScale", {Parent = InfoCard, Scale = 0})
 
-    -- Glassmorphism blur effect
     local GlassBlur = Create("Frame", {Parent = InfoCard, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.95, Size = UDim2.new(1, 0, 1, 0), ZIndex = 150})
     Create("UICorner", {Parent = GlassBlur, CornerRadius = UDim.new(0, 16)})
 
@@ -334,18 +331,15 @@ function Library:CreateWindow(options)
     local MainScale = Create("UIScale", {Parent = MainFrame, Scale = 0.8})
     Create("UICorner", {Parent = MainFrame, CornerRadius = UDim.new(0, 16)})
     
-    -- Glass border with gradient
     local BorderStroke = Create("UIStroke", {Parent = MainFrame, Color = AccentColor, Thickness = 1.5, Transparency = 0.3})
-    Create("UIGradient", {Parent = BorderStroke, Color = ColorSequence.new(AccentColor, AccentColor2), Rotation = 45})
     
-    -- Glass blur overlay
     local GlassOverlay = Create("Frame", {Parent = MainFrame, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.95, Size = UDim2.new(1, 0, 1, 0), ZIndex = 0})
     Create("UICorner", {Parent = GlassOverlay, CornerRadius = UDim.new(0, 16)})
     
     Tween(MainScale, {Scale = 1}, 0.5)
     Tween(MainFrame, {BackgroundTransparency = 0.1}, 0.5)
 
-    -- // FLOATING BOTTOM BAR - Modern pill design
+    -- // FLOATING BOTTOM BAR
     local BottomDragHitbox = Create("Frame", {
         Parent = ScreenGui,
         BackgroundTransparency = 1,
@@ -370,7 +364,6 @@ function Library:CreateWindow(options)
         Thickness = 1.2, 
         Transparency = 0.3
     })
-    Create("UIGradient", {Parent = BottomBarStroke, Color = ColorSequence.new(AccentColor, AccentColor2), Rotation = 45})
 
     MakeDraggable(BottomDragHitbox, MainFrame)
 
@@ -395,7 +388,7 @@ function Library:CreateWindow(options)
         end
     end)
 
-    -- // TOP BAR - Modern header
+    -- // TOP BAR
     local TopBar = Create("Frame", {Parent = MainFrame, BackgroundColor3 = Color3.fromRGB(15, 15, 25), BackgroundTransparency = 0.3, Size = UDim2.new(1, 0, 0, 40), Position = UDim2.new(0, 0, 0, 0), Active = true})
     MakeDraggable(TopBar, MainFrame)
     
@@ -416,7 +409,7 @@ function Library:CreateWindow(options)
     local Title = Create("TextLabel", {Parent = TitleContainer, Text = hubName, Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = TextColor, BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 5), Size = UDim2.new(1, 0, 0, 16), TextXAlignment = Enum.TextXAlignment.Left})
     local Subtitle = Create("TextLabel", {Parent = TitleContainer, Text = subText, Font = Enum.Font.Gotham, TextSize = 10, TextColor3 = subColor, BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 22), Size = UDim2.new(1, 0, 0, 12), TextXAlignment = Enum.TextXAlignment.Left})
 
-    -- // SEARCH BAR - Modern glass style
+    -- // SEARCH BAR
     local SearchBar = Create("Frame", {Parent = TopBar, BackgroundColor3 = Color3.fromRGB(25, 25, 35), Size = UDim2.new(0, 250, 0, 26), Position = UDim2.new(0, 180, 0.5, -13)})
     Create("UICorner", {Parent = SearchBar, CornerRadius = UDim.new(0, 8)})
     Create("UIStroke", {Parent = SearchBar, Color = Color3.fromRGB(45, 45, 60), Thickness = 1})
@@ -424,11 +417,11 @@ function Library:CreateWindow(options)
     local SearchIcon = Create("ImageLabel", {Parent = SearchBar, BackgroundTransparency = 1, Image = "rbxassetid://6031154871", ImageColor3 = SubTextColor, Size = UDim2.new(0, 14, 0, 14), Position = UDim2.new(0, 8, 0.5, -7)})
     local SearchInput = Create("TextBox", {Parent = SearchBar, BackgroundTransparency = 1, Size = UDim2.new(1, -30, 1, 0), Position = UDim2.new(0, 30, 0, 0), Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = TextColor, PlaceholderText = "Search..", TextXAlignment = Enum.TextXAlignment.Left, ClearTextOnFocus = false})
 
-    -- // WINDOW CONTROLS - Minimalist
+    -- // WINDOW CONTROLS
     local CloseBtn = Create("TextButton", {Parent = TopBar, Text = "✕", Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = SubTextColor, BackgroundTransparency = 1, Size = UDim2.new(0, 30, 1, 0), Position = UDim2.new(1, -35, 0, 0)})
     local MinBtn = Create("TextButton", {Parent = TopBar, Text = "−", Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = SubTextColor, BackgroundTransparency = 1, Size = UDim2.new(0, 30, 1, 0), Position = UDim2.new(1, -65, 0, 0)})
 
-    -- // SIDEBAR - Modern dark glass
+    -- // SIDEBAR
     local Sidebar = Create("Frame", {Parent = MainFrame, BackgroundColor3 = Color3.fromRGB(12, 12, 20), BackgroundTransparency = 0.2, Size = UDim2.new(0, 160, 1, -40), Position = UDim2.new(0, 0, 0, 40), Active = true})
     local TabSearchBox = Create("TextBox", {Parent = Sidebar, BackgroundColor3 = Color3.fromRGB(25, 25, 35), Size = UDim2.new(1, -20, 0, 26), Position = UDim2.new(0, 10, 0, 5), Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = TextColor, PlaceholderText = "Search tabs...", TextXAlignment = Enum.TextXAlignment.Left, ClearTextOnFocus = false})
     Create("UIPadding", {Parent = TabSearchBox, PaddingLeft = UDim.new(0, 8)})
@@ -438,17 +431,15 @@ function Library:CreateWindow(options)
     local TabContainer = Create("ScrollingFrame", {Parent = Sidebar, BackgroundTransparency = 1, Size = UDim2.new(1, -15, 1, -40), Position = UDim2.new(0, 10, 0, 40), ScrollBarThickness = 0})
     Create("UIListLayout", {Parent = TabContainer, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 5)})
     
-    -- // DIVIDER - Neon glow
-    local Divider = Create("Frame", {Parent = MainFrame, BackgroundColor3 = Color3.fromRGB(40, 40, 55), BorderSizePixel = 0, Size = UDim2.new(0, 1, 1, -40), Position = UDim2.new(0, 160, 0, 40)})
-    local DividerGlow = Create("Frame", {Parent = Divider, BackgroundColor3 = AccentColor, BackgroundTransparency = 0.5, Size = UDim2.new(0, 2, 0.8, 0), Position = UDim2.new(0, -0.5, 0.1, 0)})
+    -- // DIVIDER - Clean solid
+    local Divider = Create("Frame", {Parent = MainFrame, BackgroundColor3 = Color3.fromRGB(40, 40, 50), BorderSizePixel = 0, Size = UDim2.new(0, 1, 1, -40), Position = UDim2.new(0, 160, 0, 40)})
 
     local ContentArea = Create("Frame", {Parent = MainFrame, BackgroundTransparency = 1, Size = UDim2.new(1, -165, 1, -40), Position = UDim2.new(0, 165, 0, 40), Active = true})
 
-    -- // SPHERE BUTTON - Modern glass orb
+    -- // SPHERE BUTTON
     local Sphere = Create("ImageButton", {Parent = ScreenGui, BackgroundColor3 = Color3.fromRGB(15, 15, 25), BackgroundTransparency = 0.3, Size = UDim2.new(0, 50, 0, 50), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), Visible = false, AutoButtonColor = false, ImageTransparency = 1, ClipsDescendants = true})
     Create("UICorner", {Parent = Sphere, CornerRadius = UDim.new(1, 0)})
     local SphereStroke = Create("UIStroke", {Parent = Sphere, Color = AccentColor, Thickness = 2, Transparency = 0.5})
-    Create("UIGradient", {Parent = SphereStroke, Color = ColorSequence.new(AccentColor, AccentColor2), Rotation = 45})
     
     local SphereImageLabel = Create("ImageLabel", {Parent = Sphere, BackgroundTransparency = 1, Size = UDim2.new(0, sphIconSize, 0, sphIconSize), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), Image = sphImage or "", ImageTransparency = 0.5, Visible = (not sphTextToggle and sphImage ~= nil)})
     local SphereTextLabel = Create("TextLabel", {Parent = Sphere, Text = sphWords, Font = Enum.Font.GothamBold, TextSize = 16, TextColor3 = AccentColor, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), TextTransparency = 0.5, Visible = sphTextToggle})
@@ -498,13 +489,12 @@ function Library:CreateWindow(options)
         Tween(BottomBarStroke, {Transparency = 0.3}, 0.4)
     end)
 
-    -- // POPUP - Modern glass
+    -- // POPUP
     local Popup = Create("Frame", {Parent = ScreenGui, BackgroundColor3 = Color3.fromRGB(0, 0, 0), BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), ZIndex = 100, Visible = false, Active = true})
     local PopupCard = Create("Frame", {Parent = Popup, BackgroundColor3 = Color3.fromRGB(12, 12, 20), Size = UDim2.new(0, 320, 0, 160), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 101, BackgroundTransparency = 0.1, ClipsDescendants = false})
     Create("UICorner", {Parent = PopupCard, CornerRadius = UDim.new(0, 16)})
     local PopupScale = Create("UIScale", {Parent = PopupCard, Scale = 0.8})
     local PopupStroke = Create("UIStroke", {Parent = PopupCard, Color = AccentColor, Thickness = 1.5, Transparency = 0.3})
-    Create("UIGradient", {Parent = PopupStroke, Color = ColorSequence.new(AccentColor, AccentColor2), Rotation = 45})
     
     local PopupTitle = Create("TextLabel", {Parent = PopupCard, Text = "Exit Application", Font = Enum.Font.GothamBold, TextSize = 18, TextColor3 = TextColor, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 30), Position = UDim2.new(0, 0, 0, 25), ZIndex = 102, TextTransparency = 0.3, TextXAlignment = Enum.TextXAlignment.Center})
     local PopupText = Create("TextLabel", {Parent = PopupCard, Text = "Are you sure you want to close ZyronX? Unsaved configurations might be lost.", Font = Enum.Font.Gotham, TextSize = 13, TextColor3 = SubTextColor, BackgroundTransparency = 1, Size = UDim2.new(1, -40, 0, 40), Position = UDim2.new(0, 20, 0, 55), ZIndex = 102, TextTransparency = 0.3, TextXAlignment = Enum.TextXAlignment.Center, TextWrapped = true})
