@@ -1,3 +1,4 @@
+-- aa
 local Players          = game:GetService("Players")
 local TweenService     = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -128,6 +129,35 @@ local THEME_PRESETS = {
         GlassTabInactiveLite = Color3.fromRGB(28, 38, 56),
         GlassTabInactiveMid  = Color3.fromRGB(20, 28, 42),
         GlassTabInactiveDeep = Color3.fromRGB(14, 20, 32),
+    },
+    Crimson = {
+        Background = Color3.fromRGB(10, 10, 12),
+        Card       = Color3.fromRGB(16, 16, 19),
+        CardTop    = Color3.fromRGB(20, 20, 24),
+        TopBar     = Color3.fromRGB(14, 14, 17),
+        Sidebar    = Color3.fromRGB(13, 13, 16),
+        Row        = Color3.fromRGB(22, 22, 26),
+        RowHover   = Color3.fromRGB(28, 28, 33),
+        Accent     = Color3.fromRGB(230, 60, 70),
+        AccentHi   = Color3.fromRGB(245, 90, 100),
+        AccentMid  = Color3.fromRGB(200, 45, 55),
+        AccentDeep = Color3.fromRGB(140, 25, 35),
+        Text       = Color3.fromRGB(240, 240, 244),
+        SubText    = Color3.fromRGB(150, 150, 158),
+        Muted      = Color3.fromRGB(100, 100, 108),
+        Stroke     = Color3.fromRGB(38, 38, 44),
+        TrackOff   = Color3.fromRGB(40, 40, 46),
+        GlassLite  = Color3.fromRGB(34, 24, 26),
+        GlassMid   = Color3.fromRGB(22, 18, 20),
+        GlassDeep  = Color3.fromRGB(14, 12, 13),
+        GlassRim   = Color3.fromRGB(150, 55, 62),
+        GlassRimHi = Color3.fromRGB(210, 70, 78),
+        GlassTabActiveLite   = Color3.fromRGB(120, 40, 46),
+        GlassTabActiveMid    = Color3.fromRGB(85, 28, 34),
+        GlassTabActiveDeep   = Color3.fromRGB(50, 16, 20),
+        GlassTabInactiveLite = Color3.fromRGB(26, 26, 30),
+        GlassTabInactiveMid  = Color3.fromRGB(19, 19, 22),
+        GlassTabInactiveDeep = Color3.fromRGB(13, 13, 15),
     },
     Sunset = {
         Background = Color3.fromRGB(252, 244, 238),
@@ -1690,7 +1720,12 @@ function Library:CreateWindow(cfg)
     compactScale.Name = "CompactModeScale"
     compactScale.Scale = 1
     compactScale.Parent = pagesHolder
-    if cfg.CompactMode then compactScale.Scale = 0.86 end
+    local function setCompactMode(on)
+        local sc = on and 0.86 or 1
+        compactScale.Scale = sc
+        pagesHolder.Size = UDim2.fromScale(1 / sc, 1 / sc)
+    end
+    setCompactMode(cfg.CompactMode == true)
     local MINI_W = MOBILE and 188 or 224
     local MINI_H = MOBILE and 52 or 56
     local miniBar = new("Frame", {
@@ -2103,6 +2138,19 @@ function Library:CreateWindow(cfg)
     Window._ApplyingConfig = false
     local TAB_STRIP_H = MOBILE and 44 or 48
     Window.TabOrientation = "Vertical"
+    local function measureTabWidth(text, hasIcon)
+        text = tostring(text or "")
+        local w
+        local ok, res = pcall(function()
+            return TextService:GetTextSize(text, 13, Enum.Font.GothamBold, Vector2.new(1000, 20))
+        end)
+        if ok and res then
+            w = res.X
+        else
+            w = #text * 7.5 + 10
+        end
+        return math.max(w + (hasIcon and 40 or 36), 60)
+    end
     local function applyTabOrientation(mode)
         mode = (mode == "Horizontal") and "Horizontal" or "Vertical"
         Window.TabOrientation = mode
@@ -2143,8 +2191,7 @@ function Library:CreateWindow(cfg)
         for _, t in ipairs(Window.Tabs) do
             if t.Row then
                 if mode == "Horizontal" then
-                    local textW = TextService:GetTextSize(t.Name or "", 13, Enum.Font.GothamBold, Vector2.new(1000, 20)).X
-                    local w = textW + (t.IconData and 40 or 36)
+                    local w = measureTabWidth(t.Name, t.IconData ~= nil)
                     t.Row.Size = UDim2.new(0, w, 1, 0)
                 else
                     t.Row.Size = UDim2.new(1, 0, 0, 38)
@@ -2405,7 +2452,7 @@ function Library:CreateWindow(cfg)
             dragLocked = f["Vanta_DragLocked"] and true or false
         end
         if f["Vanta_CompactMode"] ~= nil then
-            compactScale.Scale = (f["Vanta_CompactMode"] and true or false) and 0.86 or 1
+            setCompactMode(f["Vanta_CompactMode"] and true or false)
         end
         if type(f["Vanta_TabOrientation"]) == "string" then
             applyTabOrientation(f["Vanta_TabOrientation"])
@@ -4279,7 +4326,7 @@ function Library:CreateWindow(cfg)
             CurrentValue = cfg.CompactMode == true,
             Flag = "Vanta_CompactMode",
             Callback = withSave(function(on)
-                tween(compactScale, 0.18, { Scale = on and 0.86 or 1 })
+                setCompactMode(on)
             end),
         })
         Tab:CreateDropdown({
@@ -4353,11 +4400,7 @@ function Library:CreateWindow(cfg)
         Tab.Name = tabName
         Tab.IsSettingsTab = _opts.IsSettingsTab == true
         local isHorizontalTabs = (Window.TabOrientation == "Horizontal")
-        local horizTabWidth = 0
-        if isHorizontalTabs then
-            local textW = TextService:GetTextSize(tabName, 13, Enum.Font.GothamBold, Vector2.new(1000, 20)).X
-            horizTabWidth = textW + (icon and 40 or 36)
-        end
+        local horizTabWidth = isHorizontalTabs and measureTabWidth(tabName, icon ~= nil) or 0
         local tabRow = new("Frame", {
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
