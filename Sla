@@ -1,4 +1,3 @@
--- a
 local Players          = game:GetService("Players")
 local TweenService     = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -7,6 +6,7 @@ local StarterGui       = game:GetService("StarterGui")
 local RunService       = game:GetService("RunService")
 local ContentProvider  = game:GetService("ContentProvider")
 local HttpService      = game:GetService("HttpService")
+local TextService      = game:GetService("TextService")
 local THEME = {
     Background = Color3.fromRGB(245, 246, 250),
     Card       = Color3.fromRGB(254, 255, 255),
@@ -1055,6 +1055,7 @@ local UI_SETTINGS_FLAGS = {
     "Vanta_UIScale", "Vanta_Opacity", "Vanta_AmbientGlow", "Vanta_Sheen",
     "Vanta_ToggleKey", "Vanta_DragLocked", "Vanta_ReduceMotion",
     "Vanta_Ripples", "Vanta_Notifications", "Vanta_Sounds",
+    "Vanta_CompactMode", "Vanta_TabOrientation",
 }
 local UI_SETTINGS_LOOKUP = {}
 for _, flagName in ipairs(UI_SETTINGS_FLAGS) do UI_SETTINGS_LOOKUP[flagName] = true end
@@ -1109,6 +1110,8 @@ function Library:CreateWindow(cfg)
     local WIN_H  = MOBILE and 360 or 480
     local SIDE_W = MOBILE and 130 or 160
     local BAR_H  = MOBILE and 46  or 52
+    local TABS_HORIZONTAL = (cfg.TabsLayout == "Horizontal")
+    local TAB_STRIP_H = MOBILE and 42 or 46
     local headerIdleStamp = 0
     local headerLogoIdleSec = (type(cfg.HeaderLogoIdleSeconds) == "number" and cfg.HeaderLogoIdleSeconds > 0)
         and cfg.HeaderLogoIdleSeconds
@@ -1609,14 +1612,20 @@ function Library:CreateWindow(cfg)
         ZIndex = 12,
         Parent = sidebar,
     })
-    new("UIListLayout", {
+    local tabScrollLayout = new("UIListLayout", {
         FillDirection = Enum.FillDirection.Vertical,
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding = UDim.new(0, 6),
         Parent = tabScroll,
     })
-    padding(tabScroll, 22, 12, 12, 12)
-    new("Frame", {
+    local tabScrollPadding = new("UIPadding", {
+        PaddingTop    = UDim.new(0, 22),
+        PaddingRight  = UDim.new(0, 12),
+        PaddingBottom = UDim.new(0, 12),
+        PaddingLeft   = UDim.new(0, 12),
+        Parent = tabScroll,
+    })
+    local sidebarFooterDivider = new("Frame", {
         AnchorPoint = Vector2.new(0, 1),
         Position = UDim2.new(0.1, 0, 1, -26),
         Size = UDim2.new(0.8, 0, 0, 1),
@@ -1626,7 +1635,7 @@ function Library:CreateWindow(cfg)
         ZIndex = 12,
         Parent = sidebar,
     })
-    new("TextLabel", {
+    local sidebarFooterLabel = new("TextLabel", {
         AnchorPoint = Vector2.new(0, 1),
         Position = UDim2.new(0, 0, 1, 0),
         Size = UDim2.new(1, 0, 0, 24),
@@ -1677,6 +1686,11 @@ function Library:CreateWindow(cfg)
         ZIndex = 12,
         Parent = contentHolder,
     })
+    local compactScale = Instance.new("UIScale")
+    compactScale.Name = "CompactModeScale"
+    compactScale.Scale = 1
+    compactScale.Parent = pagesHolder
+    if cfg.CompactMode then compactScale.Scale = 0.86 end
     local MINI_W = MOBILE and 188 or 224
     local MINI_H = MOBILE and 52 or 56
     local miniBar = new("Frame", {
@@ -2087,6 +2101,58 @@ function Library:CreateWindow(cfg)
     Window.AutoSaveDebounce = 0.7
     Window._AutoSaveTicket = 0
     Window._ApplyingConfig = false
+    local TAB_STRIP_H = MOBILE and 44 or 48
+    Window.TabOrientation = "Vertical"
+    local function applyTabOrientation(mode)
+        mode = (mode == "Horizontal") and "Horizontal" or "Vertical"
+        Window.TabOrientation = mode
+        if mode == "Horizontal" then
+            sidebar.Position = UDim2.fromOffset(0, BAR_H)
+            sidebar.Size = UDim2.new(1, 0, 0, TAB_STRIP_H)
+            contentHolder.Position = UDim2.fromOffset(0, BAR_H + TAB_STRIP_H)
+            contentHolder.Size = UDim2.new(1, 0, 1, -BAR_H - TAB_STRIP_H)
+            tabScroll.Size = UDim2.new(1, 0, 1, 0)
+            tabScrollLayout.FillDirection = Enum.FillDirection.Horizontal
+            tabScrollLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+            tabScroll.ScrollingDirection = Enum.ScrollingDirection.X
+            tabScroll.AutomaticCanvasSize = Enum.AutomaticSize.X
+            tabScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+            tabScrollPadding.PaddingTop = UDim.new(0, 8)
+            tabScrollPadding.PaddingBottom = UDim.new(0, 8)
+            tabScrollPadding.PaddingLeft = UDim.new(0, 14)
+            tabScrollPadding.PaddingRight = UDim.new(0, 14)
+            sidebarFooterDivider.Visible = false
+            sidebarFooterLabel.Visible = false
+        else
+            sidebar.Position = UDim2.fromOffset(0, BAR_H)
+            sidebar.Size = UDim2.new(0, SIDE_W, 1, -BAR_H)
+            contentHolder.Position = UDim2.fromOffset(SIDE_W, BAR_H)
+            contentHolder.Size = UDim2.new(1, -SIDE_W, 1, -BAR_H)
+            tabScroll.Size = UDim2.new(1, 0, 1, -28)
+            tabScrollLayout.FillDirection = Enum.FillDirection.Vertical
+            tabScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+            tabScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+            tabScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+            tabScrollPadding.PaddingTop = UDim.new(0, 22)
+            tabScrollPadding.PaddingBottom = UDim.new(0, 12)
+            tabScrollPadding.PaddingLeft = UDim.new(0, 12)
+            tabScrollPadding.PaddingRight = UDim.new(0, 12)
+            sidebarFooterDivider.Visible = true
+            sidebarFooterLabel.Visible = true
+        end
+        for _, t in ipairs(Window.Tabs) do
+            if t.Row then
+                if mode == "Horizontal" then
+                    local textW = TextService:GetTextSize(t.Name or "", 13, Enum.Font.GothamBold, Vector2.new(1000, 20)).X
+                    local w = textW + (t.IconData and 40 or 36)
+                    t.Row.Size = UDim2.new(0, w, 1, 0)
+                else
+                    t.Row.Size = UDim2.new(1, 0, 0, 38)
+                end
+            end
+        end
+    end
+    applyTabOrientation(cfg.TabOrientation)
     local cfgSave = (type(cfg.ConfigurationSaving) == "table") and cfg.ConfigurationSaving or nil
     Window.ConfigFolder = sanitizeConfigName(
         (cfgSave and cfgSave.FolderName)
@@ -2337,6 +2403,12 @@ function Library:CreateWindow(cfg)
         end
         if f["Vanta_DragLocked"] ~= nil then
             dragLocked = f["Vanta_DragLocked"] and true or false
+        end
+        if f["Vanta_CompactMode"] ~= nil then
+            compactScale.Scale = (f["Vanta_CompactMode"] and true or false) and 0.86 or 1
+        end
+        if type(f["Vanta_TabOrientation"]) == "string" then
+            applyTabOrientation(f["Vanta_TabOrientation"])
         end
         if type(f["Vanta_ToggleKey"]) == "string" then
             pcall(function()
@@ -3548,6 +3620,8 @@ function Library:CreateWindow(cfg)
         end
         compatWarn("Dashboard disabled on this executor: " .. tostring(dashboardBootErr))
     end
+    local preMiniPosition = nil
+    local MINI_TOP_MARGIN = 14
     local function exitMiniMode()
         if not Window.Minimized then return end
         Window.Minimized = false
@@ -3558,7 +3632,10 @@ function Library:CreateWindow(cfg)
         contentHolder.Visible = true
         dragCornerBL.Visible = true
         dragCornerBR.Visible = true
-        tween(windowFrame, 0.24, { Size = UDim2.fromOffset(WIN_W, WIN_H) }, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+        tween(windowFrame, 0.24, {
+            Size = UDim2.fromOffset(WIN_W, WIN_H),
+            Position = preMiniPosition or UDim2.fromScale(0.5, 0.5),
+        }, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
         windowFrameScale.Scale = 0.985
         tween(windowFrameScale, 0.20, { Scale = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     end
@@ -3569,6 +3646,7 @@ function Library:CreateWindow(cfg)
             dismissDashboard(nil)
         end
         dragging = false
+        preMiniPosition = windowFrame.Position
         topbar.Visible = false
         sidebar.Visible = false
         contentHolder.Visible = false
@@ -3577,7 +3655,11 @@ function Library:CreateWindow(cfg)
         miniBar.Visible = true
         miniBarScale.Scale = 0.98
         tween(miniBarScale, 0.18, { Scale = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        tween(windowFrame, 0.24, { Size = UDim2.fromOffset(MINI_W, MINI_H) }, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+        local topCenterPos = UDim2.new(0.5, 0, 0, MINI_TOP_MARGIN + MINI_H / 2)
+        tween(windowFrame, 0.24, {
+            Size = UDim2.fromOffset(MINI_W, MINI_H),
+            Position = topCenterPos,
+        }, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
     end
     closeBtn.MouseButton1Click:Connect(function() showCloseConfirm() end)
     minBtn.MouseButton1Click:Connect(function()
@@ -4192,6 +4274,21 @@ function Library:CreateWindow(cfg)
                 sheen.Visible = on
             end),
         })
+        Tab:CreateToggle({
+            Name = "Compact mode",
+            CurrentValue = cfg.CompactMode == true,
+            Flag = "Vanta_CompactMode",
+            Callback = withSave(function(on)
+                tween(compactScale, 0.18, { Scale = on and 0.86 or 1 })
+            end),
+        })
+        Tab:CreateDropdown({
+            Name = "Tab orientation",
+            Options = {"Vertical", "Horizontal"},
+            CurrentOption = cfg.TabOrientation or "Vertical",
+            Flag = "Vanta_TabOrientation",
+            Callback = withSave(function(v) applyTabOrientation(v) end),
+        })
 
         Tab:CreateSection("Behavior")
         Tab:CreateKeybind({
@@ -4255,10 +4352,16 @@ function Library:CreateWindow(cfg)
         local Tab = {}
         Tab.Name = tabName
         Tab.IsSettingsTab = _opts.IsSettingsTab == true
+        local isHorizontalTabs = (Window.TabOrientation == "Horizontal")
+        local horizTabWidth = 0
+        if isHorizontalTabs then
+            local textW = TextService:GetTextSize(tabName, 13, Enum.Font.GothamBold, Vector2.new(1000, 20)).X
+            horizTabWidth = textW + (icon and 40 or 36)
+        end
         local tabRow = new("Frame", {
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
-            Size = UDim2.new(1, 0, 0, 38),
+            Size = isHorizontalTabs and UDim2.new(0, horizTabWidth, 1, 0) or UDim2.new(1, 0, 0, 38),
             ClipsDescendants = false,
             Parent = tabScroll,
         })
@@ -5807,17 +5910,18 @@ function Library:CreateWindow(cfg)
             local function select()
                 for _, t in ipairs(nav.tabs) do
                     t.Page.Visible = false
-                    tween(t.Button, 0.12, {BackgroundColor3 = theme.Card})
-                    tween(t.Stroke, 0.12, {Transparency = 0.5, Color = theme.Stroke})
+                    t.Button.BackgroundColor3 = theme.Card
+                    t.Stroke.Transparency = 0.5
+                    t.Stroke.Color = theme.Stroke
                     t.Label.TextColor3 = theme.SubText
                 end
                 subPage.Visible = true
-                tween(btn, 0.12, {BackgroundColor3 = theme.Accent})
-                tween(btnStroke, 0.12, {Transparency = 0.1, Color = theme.AccentHi})
+                btn.BackgroundColor3 = theme.Accent
+                btnStroke.Transparency = 0.1
+                btnStroke.Color = theme.AccentHi
                 btnLbl.TextColor3 = Color3.new(1, 1, 1)
                 nav.active = SubTab
             end
-            btn.MouseButton1Down:Connect(function(x, y) ripple(btn, x, y, theme.AccentHi) end)
             btn.MouseButton1Click:Connect(select)
 
             SubTab.Button = btn
