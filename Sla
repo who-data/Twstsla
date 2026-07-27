@@ -1,4 +1,4 @@
--- aa
+-- aaaaaaaaa
 local Players          = game:GetService("Players")
 local TweenService     = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -9,38 +9,38 @@ local ContentProvider  = game:GetService("ContentProvider")
 local HttpService      = game:GetService("HttpService")
 local TextService      = game:GetService("TextService")
 local THEME = {
-    Background = Color3.fromRGB(245, 246, 250),
-    Card       = Color3.fromRGB(254, 255, 255),
-    CardTop    = Color3.fromRGB(252, 253, 255),
-    TopBar     = Color3.fromRGB(248, 249, 252),
-    Sidebar    = Color3.fromRGB(240, 242, 247),
-    Row        = Color3.fromRGB(245, 247, 252),
-    RowHover   = Color3.fromRGB(235, 238, 248),
-    Accent     = Color3.fromRGB(40, 100, 230),
-    AccentHi   = Color3.fromRGB(55, 130, 255),
-    AccentMid  = Color3.fromRGB(32, 88, 210),
-    AccentDeep = Color3.fromRGB(22, 58, 150),
-    Text       = Color3.fromRGB(18, 22, 32),
-    SubText    = Color3.fromRGB(92, 100, 118),
-    Muted      = Color3.fromRGB(130, 138, 155),
-    Stroke     = Color3.fromRGB(210, 215, 228),
-    TrackOff   = Color3.fromRGB(218, 222, 234),
+    Background = Color3.fromRGB(10, 10, 12),
+    Card       = Color3.fromRGB(16, 16, 19),
+    CardTop    = Color3.fromRGB(20, 20, 24),
+    TopBar     = Color3.fromRGB(14, 14, 17),
+    Sidebar    = Color3.fromRGB(13, 13, 16),
+    Row        = Color3.fromRGB(22, 22, 26),
+    RowHover   = Color3.fromRGB(28, 28, 33),
+    Accent     = Color3.fromRGB(230, 60, 70),
+    AccentHi   = Color3.fromRGB(245, 90, 100),
+    AccentMid  = Color3.fromRGB(200, 45, 55),
+    AccentDeep = Color3.fromRGB(140, 25, 35),
+    Text       = Color3.fromRGB(240, 240, 244),
+    SubText    = Color3.fromRGB(150, 150, 158),
+    Muted      = Color3.fromRGB(100, 100, 108),
+    Stroke     = Color3.fromRGB(38, 38, 44),
+    TrackOff   = Color3.fromRGB(40, 40, 46),
     Danger     = Color3.fromRGB(220, 65, 75),
     Success    = Color3.fromRGB(40, 180, 95),
     Warning    = Color3.fromRGB(220, 160, 45),
-    GlassLite  = Color3.fromRGB(255, 255, 254),
-    GlassMid   = Color3.fromRGB(225, 232, 248),
-    GlassDeep  = Color3.fromRGB(200, 215, 242),
+    GlassLite  = Color3.fromRGB(34, 24, 26),
+    GlassMid   = Color3.fromRGB(22, 18, 20),
+    GlassDeep  = Color3.fromRGB(14, 12, 13),
     GlassBaseTransparency = 0.38,
     GlassHoverTransparency = 0.22,
-    GlassRim   = Color3.fromRGB(130, 175, 255),
-    GlassRimHi = Color3.fromRGB(90, 145, 255),
-    GlassTabActiveLite  = Color3.fromRGB(235, 242, 255),
-    GlassTabActiveMid   = Color3.fromRGB(195, 218, 255),
-    GlassTabActiveDeep  = Color3.fromRGB(150, 190, 255),
-    GlassTabInactiveLite = Color3.fromRGB(250, 251, 253),
-    GlassTabInactiveMid  = Color3.fromRGB(238, 240, 246),
-    GlassTabInactiveDeep = Color3.fromRGB(220, 225, 236),
+    GlassRim   = Color3.fromRGB(150, 55, 62),
+    GlassRimHi = Color3.fromRGB(210, 70, 78),
+    GlassTabActiveLite  = Color3.fromRGB(120, 40, 46),
+    GlassTabActiveMid   = Color3.fromRGB(85, 28, 34),
+    GlassTabActiveDeep  = Color3.fromRGB(50, 16, 20),
+    GlassTabInactiveLite = Color3.fromRGB(26, 26, 30),
+    GlassTabInactiveMid  = Color3.fromRGB(19, 19, 22),
+    GlassTabInactiveDeep = Color3.fromRGB(13, 13, 15),
 }
 local THEME_PRESETS = {
     Light = {
@@ -1085,7 +1085,7 @@ local UI_SETTINGS_FLAGS = {
     "Vanta_UIScale", "Vanta_Opacity", "Vanta_AmbientGlow", "Vanta_Sheen",
     "Vanta_ToggleKey", "Vanta_DragLocked", "Vanta_ReduceMotion",
     "Vanta_Ripples", "Vanta_Notifications", "Vanta_Sounds",
-    "Vanta_CompactMode", "Vanta_TabOrientation",
+    "Vanta_CompactMode",
 }
 local UI_SETTINGS_LOOKUP = {}
 for _, flagName in ipairs(UI_SETTINGS_FLAGS) do UI_SETTINGS_LOOKUP[flagName] = true end
@@ -1138,9 +1138,8 @@ function Library:CreateWindow(cfg)
     local MOBILE = readMobile()
     local WIN_W  = MOBILE and 540 or 720
     local WIN_H  = MOBILE and 360 or 480
-    local SIDE_W = MOBILE and 130 or 160
+    local SIDE_W = MOBILE and 64 or 76
     local BAR_H  = MOBILE and 46  or 52
-    local TABS_HORIZONTAL = (cfg.TabsLayout == "Horizontal")
     local TAB_STRIP_H = MOBILE and 42 or 46
     local headerIdleStamp = 0
     local headerLogoIdleSec = (type(cfg.HeaderLogoIdleSeconds) == "number" and cfg.HeaderLogoIdleSeconds > 0)
@@ -1326,22 +1325,52 @@ function Library:CreateWindow(cfg)
         }),
         Parent = sheen,
     })
-    local titleLogo = new("ImageLabel", {
-        Name = "TitleLogo",
+    local hasCustomLogo = (cfg.Logo or cfg.ImageId) ~= nil
+    local logoBadge = new("Frame", {
+        Name = "LogoBadge",
         AnchorPoint = Vector2.new(0, 0.5),
         Position = UDim2.new(0, 12, 0.5, 0),
-        Size = UDim2.fromOffset(24, 24),
-        BackgroundTransparency = 1,
-        Image = (cfg.Logo or cfg.ImageId) and ("rbxassetid://" .. string.gsub(tostring(cfg.Logo or cfg.ImageId), "rbxassetid://", "")) or "rbxassetid://78968317665673",
-        ImageColor3 = theme.AccentHi,
-        ScaleType = Enum.ScaleType.Fit,
+        Size = UDim2.fromOffset(30, 30),
+        BackgroundColor3 = theme.Accent,
+        BackgroundTransparency = hasCustomLogo and 1 or 0.85,
+        BorderSizePixel = 0,
         ZIndex = 12,
         Parent = topbar,
     })
+    corner(logoBadge, 9)
+    local titleLogo = new("ImageLabel", {
+        Name = "TitleLogo",
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.fromScale(0.5, 0.5),
+        Size = UDim2.fromOffset(18, 18),
+        BackgroundTransparency = 1,
+        Image = hasCustomLogo and ("rbxassetid://" .. string.gsub(tostring(cfg.Logo or cfg.ImageId), "rbxassetid://", "")) or "",
+        ImageColor3 = theme.AccentHi,
+        ScaleType = Enum.ScaleType.Fit,
+        Visible = hasCustomLogo,
+        ZIndex = 12,
+        Parent = logoBadge,
+    })
+    local titleLogoLetter
+    if not hasCustomLogo then
+        titleLogoLetter = new("TextLabel", {
+            Name = "TitleLogoLetter",
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.fromScale(0.5, 0.5),
+            Size = UDim2.fromScale(1, 1),
+            BackgroundTransparency = 1,
+            Font = Enum.Font.GothamBlack,
+            TextSize = 16,
+            TextColor3 = theme.Accent,
+            Text = string.upper(string.sub(name, 1, 1)),
+            ZIndex = 13,
+            Parent = logoBadge,
+        })
+    end
     local hasSub = cfg.Subtitle and cfg.Subtitle ~= ""
     local title = new("TextLabel", {
         BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(44, 0),
+        Position = UDim2.fromOffset(52, 0),
         Size = UDim2.new(0, 320, 1, 0),
         Font = Enum.Font.GothamBlack,
         TextSize = 15,
@@ -1358,7 +1387,7 @@ function Library:CreateWindow(cfg)
     if hasSub then
         subtitleLabel = new("TextLabel", {
             BackgroundTransparency = 1,
-            Position = UDim2.fromOffset(64, 28),
+            Position = UDim2.fromOffset(72, 28),
             Size = UDim2.new(0, 300, 0, 14),
             Font = Enum.Font.Gotham,
             TextSize = 11,
@@ -1374,7 +1403,7 @@ function Library:CreateWindow(cfg)
     if not hasSub then
         headerTabLabel = new("TextLabel", {
             BackgroundTransparency = 1,
-            Position = UDim2.fromOffset(64, 34),
+            Position = UDim2.fromOffset(72, 34),
             Size = UDim2.new(0, 280, 0, 14),
             Font = Enum.Font.GothamBold,
             TextSize = 11,
@@ -1388,7 +1417,7 @@ function Library:CreateWindow(cfg)
     end
     local headerTabIcon = new("ImageLabel", {
         BackgroundTransparency = 1,
-        Position = UDim2.fromOffset(44, hasSub and 29 or 35),
+        Position = UDim2.fromOffset(52, hasSub and 29 or 35),
         Size = UDim2.fromOffset(14, 14),
         Image = "",
         ImageColor3 = theme.AccentHi,
@@ -1398,8 +1427,8 @@ function Library:CreateWindow(cfg)
         ZIndex = 12,
         Parent = topbar,
     })
-    local SUBLINE_WITH_ICON_X = 64
-    local SUBLINE_NO_ICON_X = 44
+    local SUBLINE_WITH_ICON_X = 72
+    local SUBLINE_NO_ICON_X = 52
     local headerIconFadeToken = 0
     local function tweenSublineX(x)
         if subtitleLabel then
@@ -1411,17 +1440,17 @@ function Library:CreateWindow(cfg)
     end
     local function layoutTitle(minimized)
         if subtitleLabel and not minimized then
-            title.Position = UDim2.fromOffset(44, 8)
+            title.Position = UDim2.fromOffset(52, 8)
             title.Size = UDim2.new(0, 320, 0, 18)
             title.TextYAlignment = Enum.TextYAlignment.Top
             subtitleLabel.Visible = true
         elseif headerTabLabel and not minimized and syncTabHeader then
-            title.Position = UDim2.fromOffset(44, 8)
+            title.Position = UDim2.fromOffset(52, 8)
             title.Size = UDim2.new(0, 320, 0, 18)
             title.TextYAlignment = Enum.TextYAlignment.Top
             if subtitleLabel then subtitleLabel.Visible = false end
         else
-            title.Position = UDim2.fromOffset(44, 0)
+            title.Position = UDim2.fromOffset(52, 0)
             title.Size = UDim2.new(0, 320, 1, 0)
             title.TextYAlignment = Enum.TextYAlignment.Center
             if subtitleLabel then subtitleLabel.Visible = false end
@@ -1597,6 +1626,42 @@ function Library:CreateWindow(cfg)
         if miniCloseIconImg then miniCloseIconImg.ImageColor3 = fg end
     end
     setHeaderButtonContrast()
+    do
+        local lp = Players.LocalPlayer
+        local userName = lp and lp.DisplayName or "Player"
+        local userAvatarImg = "rbxthumb://type=AvatarHeadShot&id=0&w=150&h=150"
+        if lp then
+            userAvatarImg = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(lp.UserId) .. "&w=150&h=150"
+        end
+        local userNameLbl = new("TextLabel", {
+            Name = "UserName",
+            AnchorPoint = Vector2.new(1, 0.5),
+            Position = UDim2.new(1, -158, 0.5, 0),
+            Size = UDim2.new(0, 110, 0, 16),
+            BackgroundTransparency = 1,
+            Font = Enum.Font.GothamMedium,
+            TextSize = 13,
+            TextColor3 = theme.Text,
+            TextXAlignment = Enum.TextXAlignment.Right,
+            TextTruncate = Enum.TextTruncate.AtEnd,
+            Text = userName,
+            ZIndex = 12,
+            Parent = topbar,
+        })
+        local userAvatar = new("ImageLabel", {
+            Name = "UserAvatar",
+            AnchorPoint = Vector2.new(1, 0.5),
+            Position = UDim2.new(1, -124, 0.5, 0),
+            Size = UDim2.fromOffset(26, 26),
+            BackgroundColor3 = theme.Row,
+            Image = userAvatarImg,
+            ScaleType = Enum.ScaleType.Fit,
+            ZIndex = 12,
+            Parent = topbar,
+        })
+        corner(userAvatar, 999)
+        stroke(userAvatar, theme.Stroke, 1, 0.4)
+    end
     local sidebar = new("Frame", {
         Position = UDim2.fromOffset(0, BAR_H),
         Size = UDim2.new(0, SIDE_W, 1, -BAR_H),
@@ -1645,14 +1710,15 @@ function Library:CreateWindow(cfg)
     local tabScrollLayout = new("UIListLayout", {
         FillDirection = Enum.FillDirection.Vertical,
         SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 6),
+        Padding = UDim.new(0, 14),
+        HorizontalAlignment = Enum.HorizontalAlignment.Center,
         Parent = tabScroll,
     })
     local tabScrollPadding = new("UIPadding", {
-        PaddingTop    = UDim.new(0, 22),
-        PaddingRight  = UDim.new(0, 12),
+        PaddingTop    = UDim.new(0, 24),
+        PaddingRight  = UDim.new(0, 10),
         PaddingBottom = UDim.new(0, 12),
-        PaddingLeft   = UDim.new(0, 12),
+        PaddingLeft   = UDim.new(0, 10),
         Parent = tabScroll,
     })
     local sidebarFooterDivider = new("Frame", {
@@ -1662,6 +1728,7 @@ function Library:CreateWindow(cfg)
         BackgroundColor3 = theme.Stroke,
         BackgroundTransparency = 0.6,
         BorderSizePixel = 0,
+        Visible = false,
         ZIndex = 12,
         Parent = sidebar,
     })
@@ -1673,7 +1740,8 @@ function Library:CreateWindow(cfg)
         Font = Enum.Font.SourceSansItalic,
         TextSize = 13,
         TextColor3 = theme.Muted,
-        Text = "Vanta UI",
+        Text = "",
+        Visible = false,
         ZIndex = 12,
         Parent = sidebar,
     })
@@ -2185,8 +2253,8 @@ function Library:CreateWindow(cfg)
             tabScrollPadding.PaddingBottom = UDim.new(0, 12)
             tabScrollPadding.PaddingLeft = UDim.new(0, 12)
             tabScrollPadding.PaddingRight = UDim.new(0, 12)
-            sidebarFooterDivider.Visible = true
-            sidebarFooterLabel.Visible = true
+            sidebarFooterDivider.Visible = false
+            sidebarFooterLabel.Visible = false
         end
         for _, t in ipairs(Window.Tabs) do
             if t.Row then
@@ -2194,12 +2262,12 @@ function Library:CreateWindow(cfg)
                     local w = measureTabWidth(t.Name, t.IconData ~= nil)
                     t.Row.Size = UDim2.new(0, w, 1, 0)
                 else
-                    t.Row.Size = UDim2.new(1, 0, 0, 38)
+                    t.Row.Size = UDim2.new(1, 0, 0, 52)
                 end
             end
         end
     end
-    applyTabOrientation(cfg.TabOrientation)
+    applyTabOrientation("Vertical")
     local cfgSave = (type(cfg.ConfigurationSaving) == "table") and cfg.ConfigurationSaving or nil
     Window.ConfigFolder = sanitizeConfigName(
         (cfgSave and cfgSave.FolderName)
@@ -2453,9 +2521,6 @@ function Library:CreateWindow(cfg)
         end
         if f["Vanta_CompactMode"] ~= nil then
             setCompactMode(f["Vanta_CompactMode"] and true or false)
-        end
-        if type(f["Vanta_TabOrientation"]) == "string" then
-            applyTabOrientation(f["Vanta_TabOrientation"])
         end
         if type(f["Vanta_ToggleKey"]) == "string" then
             pcall(function()
@@ -3465,7 +3530,7 @@ function Library:CreateWindow(cfg)
     local sortedDashThemes = {}
     for k in pairs(THEME_PRESETS) do sortedDashThemes[#sortedDashThemes + 1] = k end
     table.sort(sortedDashThemes)
-    local activeDashThemeName = (cfg.SettingsTabOptions and cfg.SettingsTabOptions.DefaultTheme) or "Midnight"
+    local activeDashThemeName = (cfg.SettingsTabOptions and cfg.SettingsTabOptions.DefaultTheme) or "Crimson"
     local themeCardMap = {}
     local function buildThemeCard(tname)
         local preset = THEME_PRESETS[tname]
@@ -3959,13 +4024,16 @@ function Library:CreateWindow(cfg)
             if t.TabGrad and t.TabStroke then
                 if active then
                     setGlassGradient(t.TabGrad, theme.GlassTabActiveLite, theme.GlassTabActiveMid, theme.GlassTabActiveDeep)
-                    tween(t.Button, 0.22, { BackgroundTransparency = 0.26 })
-                    tween(t.TabStroke, 0.22, { Transparency = 0.1, Color = theme.GlassRimHi })
+                    tween(t.Button, 0.22, { BackgroundTransparency = 0.4 })
+                    tween(t.TabStroke, 0.22, { Transparency = 0.35, Color = theme.GlassRimHi })
                 else
                     setGlassGradient(t.TabGrad, theme.GlassTabInactiveLite, theme.GlassTabInactiveMid, theme.GlassTabInactiveDeep)
-                    tween(t.Button, 0.22, { BackgroundTransparency = 0.52 })
-                    tween(t.TabStroke, 0.22, { Transparency = 0.42, Color = theme.GlassRim })
+                    tween(t.Button, 0.22, { BackgroundTransparency = 1 })
+                    tween(t.TabStroke, 0.22, { Transparency = 1, Color = theme.GlassRim })
                 end
+            end
+            if t.Indicator then
+                tween(t.Indicator, 0.22, { BackgroundTransparency = active and 0 or 1 })
             end
             tween(t.Label, 0.22, { TextColor3 = active and theme.Text or theme.SubText })
             if active then
@@ -3994,7 +4062,7 @@ function Library:CreateWindow(cfg)
                     tween(t.Dot, 0.22, { BackgroundColor3 = theme.Muted })
                 end
                 if t.Icon then
-                    tween(t.Icon, 0.22, { ImageColor3 = theme.SubText })
+                    tween(t.Icon, 0.22, { ImageColor3 = theme.Muted })
                 end
             end
         end
@@ -4274,7 +4342,7 @@ function Library:CreateWindow(cfg)
             themePresetRef = Tab:CreateDropdown({
                 Name = "Theme preset",
                 Options = presetNames,
-                CurrentOption = sopts.DefaultTheme or "Midnight",
+                CurrentOption = sopts.DefaultTheme or "Crimson",
                 Flag = "Vanta_Theme",
                 Callback = function(v) applyThemeSelection(v, true) end,
             })
@@ -4328,13 +4396,6 @@ function Library:CreateWindow(cfg)
             Callback = withSave(function(on)
                 setCompactMode(on)
             end),
-        })
-        Tab:CreateDropdown({
-            Name = "Tab orientation",
-            Options = {"Vertical", "Horizontal"},
-            CurrentOption = cfg.TabOrientation or "Vertical",
-            Flag = "Vanta_TabOrientation",
-            Callback = withSave(function(v) applyTabOrientation(v) end),
         })
 
         Tab:CreateSection("Behavior")
@@ -4404,7 +4465,7 @@ function Library:CreateWindow(cfg)
         local tabRow = new("Frame", {
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
-            Size = isHorizontalTabs and UDim2.new(0, horizTabWidth, 1, 0) or UDim2.new(1, 0, 0, 38),
+            Size = isHorizontalTabs and UDim2.new(0, horizTabWidth, 1, 0) or UDim2.new(1, 0, 0, 52),
             ClipsDescendants = false,
             Parent = tabScroll,
         })
@@ -4432,9 +4493,9 @@ function Library:CreateWindow(cfg)
         Tab.IconData = iconData
         if iconData then
             tabIcon = new("ImageLabel", {
-                AnchorPoint = Vector2.new(0, 0.5),
-                Position = UDim2.new(0, 12, 0.5, 0),
-                Size = UDim2.fromOffset(16, 16),
+                AnchorPoint = Vector2.new(0.5, 0.5),
+                Position = UDim2.fromScale(0.5, 0.5),
+                Size = UDim2.fromOffset(20, 20),
                 BackgroundTransparency = 1,
                 Image = iconData.Image,
                 ImageRectOffset = iconData.ImageRectOffset,
@@ -4446,9 +4507,9 @@ function Library:CreateWindow(cfg)
             })
         else
             dot = new("Frame", {
-                AnchorPoint = Vector2.new(0, 0.5),
-                Position = UDim2.new(0, 14, 0.5, 0),
-                Size = UDim2.fromOffset(7, 7),
+                AnchorPoint = Vector2.new(0.5, 0.5),
+                Position = UDim2.fromScale(0.5, 0.5),
+                Size = UDim2.fromOffset(8, 8),
                 BackgroundColor3 = theme.Muted,
                 BorderSizePixel = 0,
                 ZIndex = 13,
@@ -4458,16 +4519,28 @@ function Library:CreateWindow(cfg)
         end
         local tabLbl = new("TextLabel", {
             BackgroundTransparency = 1,
-            Position = UDim2.fromOffset(tabIcon and 36 or 30, 0),
-            Size = UDim2.new(1, -(tabIcon and 42 or 36), 1, 0),
+            Position = UDim2.fromOffset(0, 0),
+            Size = UDim2.new(1, 0, 1, 0),
             Font = Enum.Font.GothamBold,
             TextSize = 13,
             TextColor3 = theme.SubText,
             TextXAlignment = Enum.TextXAlignment.Left,
             Text = tabName,
+            Visible = false,
             ZIndex = 13,
             Parent = tabBtn,
         })
+        local tabIndicator = new("Frame", {
+            AnchorPoint = Vector2.new(1, 0.5),
+            Position = UDim2.new(1, 6, 0.5, 0),
+            Size = UDim2.fromOffset(3, 18),
+            BackgroundColor3 = theme.AccentHi,
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            ZIndex = 13,
+            Parent = tabRow,
+        })
+        corner(tabIndicator, 999)
         local pageShell = new("Frame", {
             Name = "Shell_" .. tabName,
             Size = UDim2.fromScale(1, 1),
@@ -4552,6 +4625,7 @@ function Library:CreateWindow(cfg)
         Tab.PageShell = pageShell
         Tab.TabStroke = tabStroke
         Tab.TabGrad = tabGrad
+        Tab.Indicator = tabIndicator
         registerThemeRefresher(function()
             local active = (Window.ActiveTab == Tab)
             if tabGrad then
@@ -4563,18 +4637,19 @@ function Library:CreateWindow(cfg)
             end
             if tabStroke then
                 tabStroke.Color        = active and theme.GlassRimHi or theme.GlassRim
-                tabStroke.Transparency = active and 0.1 or 0.42
+                tabStroke.Transparency = active and 0.35 or 1
             end
-            tabBtn.BackgroundTransparency = active and 0.26 or 0.52
+            tabBtn.BackgroundTransparency = active and 0.4 or 1
             if tabLbl then
-                tabLbl.TextColor3 = active and theme.AccentDeep or theme.SubText
+                tabLbl.TextColor3 = active and theme.Text or theme.SubText
             end
             if dot then
                 dot.BackgroundColor3 = active and theme.AccentHi or theme.Muted
             end
             if tabIcon then
-                tabIcon.ImageColor3 = active and theme.AccentDeep or theme.SubText
+                tabIcon.ImageColor3 = active and theme.Text or theme.Muted
             end
+            tabIndicator.BackgroundTransparency = active and 0 or 1
         end)
         table.insert(Window.Tabs, Tab)
         if _opts.AutoSelect ~= false and not Window.ActiveTab then Window:SelectTab(Tab) end
@@ -5868,31 +5943,43 @@ function Library:CreateWindow(cfg)
             registerFlagControl(opts.Flag, obj)
             return obj
         end
-        function Tab:CreateSubTab(subTabName)
+        function Tab:CreateSubTab(subTabName, subTabIcon)
             if not Tab._subNav then
                 local navHolder = new("Frame", {
-                    BackgroundTransparency = 1,
-                    Size = UDim2.new(1, -8, 0, 36),
+                    BackgroundColor3 = theme.Row,
+                    BackgroundTransparency = 0.15,
+                    Size = UDim2.new(1, -8, 0, 42),
                     Parent = nil,
                 })
+                corner(navHolder, 12)
                 local navScroll = new("ScrollingFrame", {
-                    Size = UDim2.fromScale(1, 1),
+                    Size = UDim2.new(1, -34, 1, 0),
                     BackgroundTransparency = 1,
                     BorderSizePixel = 0,
                     CanvasSize = UDim2.new(0, 0, 0, 0),
                     AutomaticCanvasSize = Enum.AutomaticSize.X,
                     ScrollingDirection = Enum.ScrollingDirection.X,
-                    ScrollBarThickness = 3,
-                    ScrollBarImageColor3 = theme.Accent,
-                    ScrollBarImageTransparency = 0.5,
+                    ScrollBarThickness = 0,
                     Parent = navHolder,
                 })
+                padding(navScroll, 4, 6, 4, 6)
                 local navLayout = new("UIListLayout", {
                     FillDirection = Enum.FillDirection.Horizontal,
                     SortOrder = Enum.SortOrder.LayoutOrder,
-                    Padding = UDim.new(0, 8),
+                    Padding = UDim.new(0, 4),
                     VerticalAlignment = Enum.VerticalAlignment.Center,
                     Parent = navScroll,
+                })
+                local navArrow = new("TextLabel", {
+                    AnchorPoint = Vector2.new(1, 0.5),
+                    Position = UDim2.new(1, -10, 0.5, 0),
+                    Size = UDim2.fromOffset(16, 16),
+                    BackgroundTransparency = 1,
+                    Font = Enum.Font.GothamBold,
+                    TextSize = 14,
+                    TextColor3 = theme.Muted,
+                    Text = "\226\128\186",
+                    Parent = navHolder,
                 })
                 local body = new("Frame", {
                     BackgroundTransparency = 1,
@@ -5911,21 +5998,45 @@ function Library:CreateWindow(cfg)
             local btn = new("TextButton", {
                 Size = UDim2.fromOffset(0, 30),
                 AutomaticSize = Enum.AutomaticSize.X,
-                BackgroundColor3 = theme.Card,
+                BackgroundColor3 = theme.CardTop,
+                BackgroundTransparency = 1,
                 Text = "",
                 AutoButtonColor = false,
                 Parent = nav.holder:FindFirstChildOfClass("ScrollingFrame"),
             })
             corner(btn, 8)
-            local btnStroke = stroke(btn, theme.Stroke, 1, 0.5)
-            padding(btn, 0, 14, 0, 14)
+            padding(btn, 0, 12, 0, 12)
+            local btnLayout = new("UIListLayout", {
+                FillDirection = Enum.FillDirection.Horizontal,
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Padding = UDim.new(0, 6),
+                VerticalAlignment = Enum.VerticalAlignment.Center,
+                Parent = btn,
+            })
+            local btnIcon
+            local iconData = subTabIcon and resolveIcon(subTabIcon)
+            if iconData then
+                btnIcon = new("ImageLabel", {
+                    Size = UDim2.fromOffset(14, 14),
+                    BackgroundTransparency = 1,
+                    Image = iconData.Image,
+                    ImageRectOffset = iconData.ImageRectOffset,
+                    ImageRectSize   = iconData.ImageRectSize,
+                    ImageColor3 = theme.Muted,
+                    ScaleType = Enum.ScaleType.Fit,
+                    LayoutOrder = 1,
+                    Parent = btn,
+                })
+            end
             local btnLbl = new("TextLabel", {
-                Size = UDim2.fromScale(1, 1),
+                Size = UDim2.fromOffset(0, 30),
+                AutomaticSize = Enum.AutomaticSize.X,
                 BackgroundTransparency = 1,
                 Font = Enum.Font.GothamBold,
                 TextSize = 12,
-                TextColor3 = theme.SubText,
+                TextColor3 = theme.Muted,
                 Text = subTabName,
+                LayoutOrder = 2,
                 Parent = btn,
             })
 
@@ -5953,23 +6064,21 @@ function Library:CreateWindow(cfg)
             local function select()
                 for _, t in ipairs(nav.tabs) do
                     t.Page.Visible = false
-                    t.Button.BackgroundColor3 = theme.Card
-                    t.Stroke.Transparency = 0.5
-                    t.Stroke.Color = theme.Stroke
-                    t.Label.TextColor3 = theme.SubText
+                    tween(t.Button, 0.15, { BackgroundTransparency = 1 })
+                    tween(t.Label, 0.15, { TextColor3 = theme.Muted })
+                    if t.Icon then tween(t.Icon, 0.15, { ImageColor3 = theme.Muted }) end
                 end
                 subPage.Visible = true
-                btn.BackgroundColor3 = theme.Accent
-                btnStroke.Transparency = 0.1
-                btnStroke.Color = theme.AccentHi
-                btnLbl.TextColor3 = Color3.new(1, 1, 1)
+                tween(btn, 0.15, { BackgroundTransparency = 0, BackgroundColor3 = theme.CardTop })
+                tween(btnLbl, 0.15, { TextColor3 = theme.Text })
+                if btnIcon then tween(btnIcon, 0.15, { ImageColor3 = theme.Text }) end
                 nav.active = SubTab
             end
             btn.MouseButton1Click:Connect(select)
 
             SubTab.Button = btn
-            SubTab.Stroke = btnStroke
             SubTab.Label = btnLbl
+            SubTab.Icon = btnIcon
             SubTab.Page = subPage
             table.insert(nav.tabs, SubTab)
             if #nav.tabs == 1 then select() end
