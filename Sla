@@ -1,3 +1,4 @@
+-- a
 local Players          = game:GetService("Players")
 local TweenService     = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -924,17 +925,22 @@ local function rgbToHsv(c)
     end
     return h, s, v
 end
-local function color3ToHex(c)
-    local r, g, b = math.round(c.R * 255), math.round(c.G * 255), math.round(c.B * 255)
-    return string.format("#%02X%02X%02X", r, g, b)
+local function rgbToHex(c)
+    return string.format("%02X%02X%02X",
+        math.floor(c.R * 255 + 0.5),
+        math.floor(c.G * 255 + 0.5),
+        math.floor(c.B * 255 + 0.5))
 end
-local function hexToColor3(hex)
-    hex = hex:gsub("^#", "")
-    if #hex ~= 6 then return nil end
-    local r = tonumber(hex:sub(1, 2), 16)
-    local g = tonumber(hex:sub(3, 4), 16)
-    local b = tonumber(hex:sub(5, 6), 16)
-    if not r or not g or not b then return nil end
+local function hexToRgb(hex)
+    hex = tostring(hex or ""):gsub("^#", ""):gsub("^0x", "")
+    if #hex == 3 then
+        hex = hex:sub(1,1):rep(2) .. hex:sub(2,2):rep(2) .. hex:sub(3,3):rep(2)
+    end
+    if #hex ~= 6 or hex:match("[^%x]") then return nil end
+    local r = tonumber(hex:sub(1,2), 16)
+    local g = tonumber(hex:sub(3,4), 16)
+    local b = tonumber(hex:sub(5,6), 16)
+    if not (r and g and b) then return nil end
     return Color3.fromRGB(r, g, b)
 end
 local function normalizeCurrent(cur, multi, options)
@@ -4513,6 +4519,7 @@ function Library:CreateWindow(cfg)
             addOrder(holder)
             registerSearch(text, holder, "section", nil, nil)
             local obj = {}
+            obj.Instance = holder
             function obj:Set(t) lbl.Text = string.upper(t or "") end
             return obj
         end
@@ -4531,143 +4538,7 @@ function Library:CreateWindow(cfg)
                 Parent = holder,
             })
             addOrder(holder)
-            return {}
-        end
-
-        function Tab:CreateSubTab(opts)
-            opts = opts or {}
-            local tabs = opts.Tabs or {}
-            local defaultName = opts.Default or tabs[1]
-            if #tabs == 0 then return {} end
-            local container = new("Frame", {
-                BackgroundColor3 = Color3.new(1, 1, 1),
-                Size = UDim2.new(1, -8, 0, 40),
-                AutomaticSize = Enum.AutomaticSize.Y,
-                BorderSizePixel = 0,
-                ClipsDescendants = true,
-            })
-            local cStroke = select(1, applyLiquidGlass(container, theme, 10))
-            container.MouseEnter:Connect(function()
-                tween(container, 0.12, {BackgroundTransparency = theme.GlassHoverTransparency})
-                tween(cStroke, 0.12, {Transparency = 0.15, Color = theme.GlassRimHi})
-            end)
-            container.MouseLeave:Connect(function()
-                tween(container, 0.12, {BackgroundTransparency = theme.GlassBaseTransparency})
-                tween(cStroke, 0.12, {Transparency = 0.42, Color = theme.GlassRim})
-            end)
-            padding(container, 6, 6, 10, 6)
-            local bar = new("Frame", {
-                Size = UDim2.new(1, 0, 0, 28),
-                BackgroundTransparency = 1,
-                Parent = container,
-            })
-            new("UIListLayout", {
-                FillDirection = Enum.FillDirection.Horizontal,
-                SortOrder = Enum.SortOrder.LayoutOrder,
-                Padding = UDim.new(0, 3),
-                Parent = bar,
-            })
-            local content = new("Frame", {
-                Size = UDim2.new(1, 0, 0, 0),
-                AutomaticSize = Enum.AutomaticSize.Y,
-                Position = UDim2.fromOffset(0, 32),
-                BackgroundTransparency = 1,
-                ClipsDescendants = true,
-                Parent = container,
-            })
-            local activeSubPage = nil
-            local subPages = {}
-            local subBtns = {}
-            for i, tabName in ipairs(tabs) do
-                local btn = new("TextButton", {
-                    Size = UDim2.new(1, -6, 1, 0),
-                    BackgroundColor3 = theme.Row,
-                    BackgroundTransparency = 0.5,
-                    Text = tabName,
-                    Font = Enum.Font.GothamBold,
-                    TextSize = 12,
-                    TextColor3 = theme.SubText,
-                    AutoButtonColor = false,
-                    BorderSizePixel = 0,
-                    Parent = bar,
-                })
-                corner(btn, 6)
-                btn.LayoutOrder = i - 1
-                local pg = new("ScrollingFrame", {
-                    Name = "SubPage_" .. tabName,
-                    Size = UDim2.new(1, 0, 0, 0),
-                    AutomaticCanvasSize = Enum.AutomaticSize.Y,
-                    CanvasSize = UDim2.new(0, 0, 0, 0),
-                    BackgroundTransparency = 1,
-                    BorderSizePixel = 0,
-                    ScrollBarThickness = 3,
-                    ScrollBarImageColor3 = theme.Accent,
-                    ScrollBarImageTransparency = 0.4,
-                    Visible = false,
-                    ClipsDescendants = true,
-                    Parent = content,
-                })
-                new("UIListLayout", {
-                    FillDirection = Enum.FillDirection.Vertical,
-                    SortOrder = Enum.SortOrder.LayoutOrder,
-                    Padding = UDim.new(0, 8),
-                    Parent = pg,
-                })
-                padding(pg, 4, 4, 4, 4)
-                subPages[tabName] = pg
-                subBtns[tabName] = btn
-            end
-            local function switchSub(name)
-                if activeSubPage == subPages[name] then return end
-                activeSubPage = subPages[name]
-                for n, pg in pairs(subPages) do
-                    pg.Visible = (n == name)
-                end
-                for n, btn in pairs(subBtns) do
-                    if n == name then
-                        tween(btn, 0.15, {BackgroundColor3 = theme.Accent, BackgroundTransparency = 0.15})
-                        btn.TextColor3 = Color3.new(1, 1, 1)
-                    else
-                        tween(btn, 0.15, {BackgroundColor3 = theme.Row, BackgroundTransparency = 0.5})
-                        btn.TextColor3 = theme.SubText
-                    end
-                end
-            end
-            for name, btn in pairs(subBtns) do
-                btn.MouseButton1Click:Connect(function() switchSub(name) end)
-            end
-            if defaultName then switchSub(defaultName) end
-            addOrder(container)
-            registerSearch(opts.Name or "SubTab", container, "subtab", nil, nil)
-            local obj = {}
-            local componentMethods = {
-                "CreateSection", "CreateDivider", "CreateLabel", "CreateParagraph",
-                "CreateButton", "CreateToggle", "CreateSlider", "CreateDropdown",
-                "CreateInput", "CreateKeybind", "CreateColorPicker"
-            }
-            for _, method in ipairs(componentMethods) do
-                obj[method] = function(self, ...)
-                    local savedAddOrder = addOrder
-                    local targetPage = activeSubPage or subPages[defaultName]
-                    if not targetPage then return nil end
-                    addOrder = function(elem)
-                        elem.LayoutOrder = #targetPage:GetChildren()
-                        elem.Parent = targetPage
-                    end
-                    local result = Tab[method](Tab, ...)
-                    addOrder = savedAddOrder
-                    return result
-                end
-            end
-            function obj:SetTab(name)
-                switchSub(name)
-            end
-            function obj:GetTabNames()
-                local names = {}
-                for i, n in ipairs(tabs) do table.insert(names, n) end
-                return names
-            end
-            return obj
+            return {Instance = holder}
         end
         function Tab:CreateLabel(text)
             local lbl = new("TextLabel", {
@@ -4684,6 +4555,7 @@ function Library:CreateWindow(cfg)
             addOrder(lbl)
             registerSearch(text, lbl, "label", nil, nil)
             local obj = {}
+            obj.Instance = lbl
             function obj:Set(t) lbl.Text = "   " .. (t or "") end
             return obj
         end
@@ -4724,6 +4596,7 @@ function Library:CreateWindow(cfg)
             addOrder(holder)
             registerSearch(opts.Title, holder, "paragraph", nil, nil, opts.Content)
             local obj = {}
+            obj.Instance = holder
             function obj:Set(t)
                 t = t or {}
                 if t.Title   then ttl.Text  = t.Title end
@@ -4786,6 +4659,7 @@ function Library:CreateWindow(cfg)
             addOrder(btn)
             registerSearch(opts.Name, btn, "button", nil, nil)
             local obj = {}
+            obj.Instance = btn
             function obj:Set(nm) lbl.Text = nm end
             return obj
         end
@@ -4850,6 +4724,7 @@ function Library:CreateWindow(cfg)
             addOrder(row)
             registerSearch(opts.Name, row, "toggle", opts.Flag, nil)
             local obj = {}
+            obj.Instance = row
             function obj:Set(v) apply(v, true) end
             function obj:Get() return state end
             registerFlagControl(opts.Flag, obj)
@@ -4981,6 +4856,7 @@ function Library:CreateWindow(cfg)
             addOrder(row)
             registerSearch(opts.Name, row, "slider", opts.Flag, nil)
             local obj = {}
+            obj.Instance = row
             function obj:Set(v, fire)
                 if fire == nil then fire = true end
                 setValue(v, fire == true)
@@ -5184,6 +5060,7 @@ function Library:CreateWindow(cfg)
             addOrder(row)
             registerSearch(opts.Name, row, "dropdown", opts.Flag, nil)
             local obj = {}
+            obj.Instance = row
             function obj:Set(v, fire)
                 if fire == nil then fire = true end
                 if multi then
@@ -5289,6 +5166,7 @@ function Library:CreateWindow(cfg)
             addOrder(row)
             registerSearch(opts.Name, row, "input", opts.Flag, nil)
             local obj = {}
+            obj.Instance = row
             function obj:Set(t)
                 tb.Text = t or ""
                 value = tb.Text
@@ -5379,6 +5257,7 @@ function Library:CreateWindow(cfg)
             addOrder(row)
             registerSearch(opts.Name, row, "keybind", opts.Flag, nil)
             local obj = {}
+            obj.Instance = row
             function obj:Set(k) key = k or "None" display.Text = key if opts.Flag then Library.Flags[opts.Flag] = key end end
             function obj:Get() return key end
             registerFlagControl(opts.Flag, obj)
@@ -5389,7 +5268,8 @@ function Library:CreateWindow(cfg)
             local color = opts.Color or Color3.fromRGB(255, 255, 255)
             local h, s, v = rgbToHsv(color)
             local COLLAPSED_H = 44
-            local OPEN_EXTRA = 290
+            local OPEN_EXTRA = 232
+            local MODE_ROW_H, GAP, ZONE_H, PREVIEW_H = 26, 8, 146, 22
             local row = new("Frame", {
                 BackgroundColor3 = Color3.new(1, 1, 1),
                 Size = UDim2.new(1, -8, 0, COLLAPSED_H),
@@ -5437,68 +5317,60 @@ function Library:CreateWindow(cfg)
             })
             corner(panel, 8)
             stroke(panel, theme.Stroke, 1, 0.6)
-            padding(panel, 10, 10, 10, 10)
+            padding(panel, 12, 12, 12, 12)
 
-            -- ========== Mode Tab Bar ==========
-            local modeBar = new("Frame", {
-                Size = UDim2.new(1, 0, 0, 26),
+            -- mode switch strip (HSV / RGB / HEX)
+            local modeRow = new("Frame", {
+                Position = UDim2.fromOffset(0, 0),
+                Size = UDim2.new(1, 0, 0, MODE_ROW_H),
                 BackgroundTransparency = 1,
                 Parent = panel,
             })
-            new("UIListLayout", {
-                FillDirection = Enum.FillDirection.Horizontal,
-                SortOrder = Enum.SortOrder.LayoutOrder,
-                Padding = UDim.new(0, 3),
-                Parent = modeBar,
-            })
-            local modeNames = {"HSV", "RGB", "HEX"}
             local modeBtns = {}
-            local activeMode = "HSV"
-            for i, mode in ipairs(modeNames) do
-                local mBtn = new("TextButton", {
-                    Size = UDim2.new(1 / 3, -4, 1, 0),
-                    BackgroundColor3 = theme.Row,
-                    BackgroundTransparency = 0.3,
-                    Text = mode,
+            local MODES = {"HSV", "RGB", "HEX"}
+            for i, m in ipairs(MODES) do
+                local mb = new("TextButton", {
+                    Position = UDim2.new((i-1)/3, (i > 1 and 3 or 0), 0, 0),
+                    Size = UDim2.new(1/3, (i > 1 and i < 3 and -6 or -3), 1, 0),
+                    BackgroundColor3 = theme.Card,
+                    Text = m,
                     Font = Enum.Font.GothamBold,
                     TextSize = 11,
                     TextColor3 = theme.SubText,
                     AutoButtonColor = false,
-                    BorderSizePixel = 0,
-                    Parent = modeBar,
+                    Parent = modeRow,
                 })
-                corner(mBtn, 6)
-                mBtn.LayoutOrder = i - 1
-                modeBtns[mode] = mBtn
+                corner(mb, 6)
+                local mbStroke = stroke(mb, theme.Stroke, 1, 0.5)
+                modeBtns[m] = {Btn = mb, Stroke = mbStroke}
             end
 
-            -- ========== Content Frame (mode switching) ==========
-            local contentFrame = new("Frame", {
-                Position = UDim2.fromOffset(0, 30),
-                Size = UDim2.new(1, 0, 0, 180),
+            -- shared zone that hosts whichever mode is active
+            local zone = new("Frame", {
+                Position = UDim2.fromOffset(0, MODE_ROW_H + GAP),
+                Size = UDim2.new(1, 0, 0, ZONE_H),
                 BackgroundTransparency = 1,
-                ClipsDescendants = true,
                 Parent = panel,
             })
 
-            -- ========== HSV Mode ==========
-            local hsvFrame = new("Frame", {
+            -- ===== HSV container =====
+            local hsvContainer = new("Frame", {
                 Size = UDim2.fromScale(1, 1),
                 BackgroundTransparency = 1,
-                Parent = contentFrame,
+                Parent = zone,
             })
             local svArea = new("ImageButton", {
-                Size = UDim2.new(1, 0, 0, 120),
+                Size = UDim2.new(1, 0, 0, 122),
                 BackgroundColor3 = hsvToRgb(h, 1, 1),
                 BorderSizePixel = 0,
                 AutoButtonColor = false,
                 Text = "",
-                Parent = hsvFrame,
+                Parent = hsvContainer,
             })
             corner(svArea, 6)
             local svWhite = new("Frame", {
                 Size = UDim2.fromScale(1, 1),
-                BackgroundColor3 = Color3.new(1, 1, 1),
+                BackgroundColor3 = Color3.new(1,1,1),
                 BorderSizePixel = 0,
                 Parent = svArea,
             })
@@ -5512,7 +5384,7 @@ function Library:CreateWindow(cfg)
             })
             local svBlack = new("Frame", {
                 Size = UDim2.fromScale(1, 1),
-                BackgroundColor3 = Color3.new(0, 0, 0),
+                BackgroundColor3 = Color3.new(0,0,0),
                 BorderSizePixel = 0,
                 Parent = svArea,
             })
@@ -5528,320 +5400,216 @@ function Library:CreateWindow(cfg)
             local svCursor = new("Frame", {
                 AnchorPoint = Vector2.new(0.5, 0.5),
                 Size = UDim2.fromOffset(10, 10),
-                BackgroundColor3 = Color3.new(1, 1, 1),
+                BackgroundColor3 = Color3.new(1,1,1),
                 BorderSizePixel = 0,
                 ZIndex = 10,
                 Parent = svArea,
             })
             corner(svCursor, 999)
-            stroke(svCursor, Color3.new(0, 0, 0), 1, 0.5)
-            -- HSV labels
-            new("TextLabel", {
-                Position = UDim2.fromOffset(0, 123),
-                Size = UDim2.new(0.33, 0, 0, 14),
-                BackgroundTransparency = 1,
-                Font = Enum.Font.Gotham,
-                TextSize = 10,
-                TextColor3 = theme.SubText,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                Text = "H: " .. math.round(h * 360),
-                Parent = hsvFrame,
-            })
-            new("TextLabel", {
-                Position = UDim2.new(0.33, 0, 123, 0),
-                Size = UDim2.new(0.34, 0, 0, 14),
-                BackgroundTransparency = 1,
-                Font = Enum.Font.Gotham,
-                TextSize = 10,
-                TextColor3 = theme.SubText,
-                TextXAlignment = Enum.TextXAlignment.Center,
-                Text = "S: " .. math.round(s * 100),
-                Parent = hsvFrame,
-            })
-            new("TextLabel", {
-                AnchorPoint = Vector2.new(1, 0),
-                Position = UDim2.new(1, 0, 123, 0),
-                Size = UDim2.new(0.33, 0, 0, 14),
-                BackgroundTransparency = 1,
-                Font = Enum.Font.Gotham,
-                TextSize = 10,
-                TextColor3 = theme.SubText,
-                TextXAlignment = Enum.TextXAlignment.Right,
-                Text = "V: " .. math.round(v * 100),
-                Parent = hsvFrame,
-            })
+            stroke(svCursor, Color3.new(0,0,0), 1, 0.5)
             local hueBar = new("ImageButton", {
-                Position = UDim2.new(0, 0, 0, 139),
+                Position = UDim2.new(0, 0, 0, 130),
                 Size = UDim2.new(1, 0, 0, 14),
-                BackgroundColor3 = Color3.new(1, 1, 1),
+                BackgroundColor3 = Color3.new(1,1,1),
                 BorderSizePixel = 0,
                 AutoButtonColor = false,
                 Text = "",
-                Parent = hsvFrame,
+                Parent = hsvContainer,
             })
             corner(hueBar, 6)
             new("UIGradient", {
                 Color = ColorSequence.new({
-                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
-                    ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 255, 0)),
-                    ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)),
-                    ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 255, 255)),
-                    ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0, 0, 255)),
-                    ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
-                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0)),
+                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255,   0,   0)),
+                    ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 255,   0)),
+                    ColorSequenceKeypoint.new(0.33, Color3.fromRGB(  0, 255,   0)),
+                    ColorSequenceKeypoint.new(0.50, Color3.fromRGB(  0, 255, 255)),
+                    ColorSequenceKeypoint.new(0.67, Color3.fromRGB(  0,   0, 255)),
+                    ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255,   0, 255)),
+                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255,   0,   0)),
                 }),
                 Parent = hueBar,
             })
             local hueCursor = new("Frame", {
                 AnchorPoint = Vector2.new(0.5, 0.5),
                 Size = UDim2.fromOffset(4, 18),
-                BackgroundColor3 = Color3.new(1, 1, 1),
+                BackgroundColor3 = Color3.new(1,1,1),
                 BorderSizePixel = 0,
                 ZIndex = 10,
                 Parent = hueBar,
             })
             corner(hueCursor, 2)
-            stroke(hueCursor, Color3.new(0, 0, 0), 1, 0.4)
-            -- Remaining space in HSV frame: preview at bottom
-            local hsvPreview = new("Frame", {
-                Position = UDim2.new(0, 0, 0, 159),
-                Size = UDim2.new(1, 0, 0, 21),
-                BackgroundColor3 = color,
-                BorderSizePixel = 0,
-                Parent = hsvFrame,
-            })
-            corner(hsvPreview, 6)
-            stroke(hsvPreview, Color3.new(1, 1, 1), 1, 0.7)
-            local hsvHexLbl = new("TextLabel", {
-                Size = UDim2.new(1, 0, 1, 0),
-                BackgroundTransparency = 1,
-                Font = Enum.Font.GothamBold,
-                TextSize = 11,
-                TextColor3 = Color3.new(1, 1, 1),
-                Parent = hsvPreview,
-            })
+            stroke(hueCursor, Color3.new(0,0,0), 1, 0.4)
 
-            -- ========== RGB Mode ==========
-            local rgbFrame = new("Frame", {
+            -- ===== RGB container =====
+            local rgbContainer = new("Frame", {
                 Size = UDim2.fromScale(1, 1),
                 BackgroundTransparency = 1,
                 Visible = false,
-                Parent = contentFrame,
+                Parent = zone,
             })
-            local rgbSliders = {}
-            local rgbChannels = {
-                {Name = "R", Color = Color3.fromRGB(255, 80, 80)},
-                {Name = "G", Color = Color3.fromRGB(80, 200, 80)},
-                {Name = "B", Color = Color3.fromRGB(80, 120, 255)},
-            }
-            local rgbValues = {math.round(color.R * 255), math.round(color.G * 255), math.round(color.B * 255)}
-            for ci, ch in ipairs(rgbChannels) do
-                local yOff = (ci - 1) * 54
-                local lbl = new("TextLabel", {
-                    Position = UDim2.fromOffset(0, yOff),
-                    Size = UDim2.new(0.4, 0, 0, 16),
+            local function makeChannelBar(idx, letter, y)
+                local barRow = new("Frame", {
+                    Position = UDim2.fromOffset(0, y),
+                    Size = UDim2.new(1, 0, 0, 30),
+                    BackgroundTransparency = 1,
+                    Parent = rgbContainer,
+                })
+                new("TextLabel", {
+                    Size = UDim2.fromOffset(16, 30),
                     BackgroundTransparency = 1,
                     Font = Enum.Font.GothamBold,
                     TextSize = 12,
-                    TextColor3 = ch.Color,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    Text = ch.Name,
-                    Parent = rgbFrame,
+                    TextColor3 = theme.SubText,
+                    Text = letter,
+                    Parent = barRow,
                 })
+                local bar = new("ImageButton", {
+                    Position = UDim2.fromOffset(22, 5),
+                    Size = UDim2.new(1, -66, 0, 20),
+                    BackgroundColor3 = Color3.new(1,1,1),
+                    BorderSizePixel = 0,
+                    AutoButtonColor = false,
+                    Text = "",
+                    Parent = barRow,
+                })
+                corner(bar, 5)
+                local grad = new("UIGradient", { Parent = bar })
+                local cursor = new("Frame", {
+                    AnchorPoint = Vector2.new(0.5, 0.5),
+                    Position = UDim2.new(0, 0, 0.5, 0),
+                    Size = UDim2.fromOffset(4, 24),
+                    BackgroundColor3 = Color3.new(1,1,1),
+                    BorderSizePixel = 0,
+                    ZIndex = 10,
+                    Parent = bar,
+                })
+                corner(cursor, 2)
+                stroke(cursor, Color3.new(0,0,0), 1, 0.4)
                 local valLbl = new("TextLabel", {
                     AnchorPoint = Vector2.new(1, 0),
-                    Position = UDim2.new(1, 0, yOff, 0),
-                    Size = UDim2.new(0.4, 0, 0, 16),
+                    Position = UDim2.new(1, 0, 0, 5),
+                    Size = UDim2.fromOffset(36, 20),
                     BackgroundTransparency = 1,
                     Font = Enum.Font.GothamBold,
                     TextSize = 12,
                     TextColor3 = theme.Text,
                     TextXAlignment = Enum.TextXAlignment.Right,
-                    Text = tostring(rgbValues[ci]),
-                    Parent = rgbFrame,
+                    Text = "0",
+                    Parent = barRow,
                 })
-                local track = new("Frame", {
-                    Position = UDim2.fromOffset(0, yOff + 20),
-                    Size = UDim2.new(1, 0, 0, 10),
-                    BackgroundColor3 = theme.TrackOff,
-                    BorderSizePixel = 0,
-                    Parent = rgbFrame,
-                })
-                corner(track, 999)
-                local fill = new("Frame", {
-                    Size = UDim2.fromScale(rgbValues[ci] / 255, 1),
-                    BackgroundColor3 = ch.Color,
-                    BorderSizePixel = 0,
-                    Parent = track,
-                })
-                corner(fill, 999)
-                local knob = new("Frame", {
-                    AnchorPoint = Vector2.new(0.5, 0.5),
-                    Position = UDim2.fromScale(rgbValues[ci] / 255, 0.5),
-                    Size = UDim2.fromOffset(16, 16),
-                    BackgroundColor3 = Color3.fromRGB(245, 248, 255),
-                    BorderSizePixel = 0,
-                    ZIndex = 5,
-                    Parent = track,
-                })
-                corner(knob, 999)
-                stroke(knob, Color3.new(0, 0, 0), 1, 0.3)
-                rgbSliders[ci] = {track = track, fill = fill, knob = knob, valLbl = valLbl, channel = ci}
+                return bar, grad, cursor, valLbl
             end
-            local rgbPreview = new("Frame", {
-                Position = UDim2.new(0, 0, 0, 164),
-                Size = UDim2.new(1, 0, 0, 16),
-                BackgroundColor3 = color,
-                BorderSizePixel = 0,
-                Parent = rgbFrame,
-            })
-            corner(rgbPreview, 6)
-            stroke(rgbPreview, Color3.new(1, 1, 1), 1, 0.7)
+            local rBar, rGrad, rCursor, rVal = makeChannelBar(1, "R", 0)
+            local gBar, gGrad, gCursor, gVal = makeChannelBar(2, "G", 36)
+            local bBar, bGrad, bCursor, bVal = makeChannelBar(3, "B", 72)
 
-            -- ========== HEX Mode ==========
-            local hexFrame = new("Frame", {
+            -- ===== HEX container =====
+            local hexContainer = new("Frame", {
                 Size = UDim2.fromScale(1, 1),
                 BackgroundTransparency = 1,
                 Visible = false,
-                Parent = contentFrame,
+                Parent = zone,
             })
             new("TextLabel", {
-                Position = UDim2.fromOffset(0, 0),
-                Size = UDim2.new(1, 0, 0, 20),
-                BackgroundTransparency = 1,
-                Font = Enum.Font.Gotham,
-                TextSize = 11,
-                TextColor3 = theme.SubText,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                Text = "HEX Color Value",
-                Parent = hexFrame,
-            })
-            local hexBox = new("TextBox", {
-                Position = UDim2.fromOffset(0, 24),
-                Size = UDim2.new(1, 0, 0, 32),
-                BackgroundColor3 = theme.Card,
-                BorderSizePixel = 0,
-                Font = Enum.Font.GothamBold,
-                TextSize = 16,
-                TextColor3 = theme.Text,
-                PlaceholderText = "#FF0000",
-                PlaceholderColor3 = theme.Muted,
-                Text = color3ToHex(color),
-                TextXAlignment = Enum.TextXAlignment.Center,
-                ClearTextOnFocus = false,
-                Parent = hexFrame,
-            })
-            corner(hexBox, 8)
-            stroke(hexBox, theme.Stroke, 1, 0.5)
-            local hexPreview = new("Frame", {
-                Position = UDim2.fromOffset(0, 66),
-                Size = UDim2.new(1, 0, 0, 60),
-                BackgroundColor3 = color,
-                BorderSizePixel = 0,
-                Parent = hexFrame,
-            })
-            corner(hexPreview, 10)
-            stroke(hexPreview, Color3.new(1, 1, 1), 1, 0.7)
-            local hexColorLbl = new("TextLabel", {
-                Size = UDim2.new(1, 0, 0.4, 0),
-                Position = UDim2.fromOffset(0, 8),
-                BackgroundTransparency = 1,
-                Font = Enum.Font.GothamBold,
-                TextSize = 15,
-                TextColor3 = Color3.new(1, 1, 1),
-                Text = color3ToHex(color),
-                Parent = hexPreview,
-            })
-            local hexRgbLbl = new("TextLabel", {
-                Size = UDim2.new(1, 0, 0.4, 0),
-                Position = UDim2.new(0, 0, 0.5, 0),
-                BackgroundTransparency = 1,
-                Font = Enum.Font.Gotham,
-                TextSize = 12,
-                TextColor3 = Color3.new(1, 1, 1),
-                TextTransparency = 0.2,
-                Parent = hexPreview,
-            })
-            local hexStatusLbl = new("TextLabel", {
-                AnchorPoint = Vector2.new(0.5, 1),
-                Position = UDim2.new(0.5, 0, 1, -6),
+                Position = UDim2.fromOffset(0, 4),
                 Size = UDim2.new(1, 0, 0, 14),
                 BackgroundTransparency = 1,
                 Font = Enum.Font.Gotham,
                 TextSize = 10,
-                TextColor3 = theme.Success,
-                Text = "Valid",
-                Parent = hexFrame,
+                TextColor3 = theme.SubText,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Text = "HEX CODE",
+                Parent = hexContainer,
+            })
+            local hexRow = new("Frame", {
+                Position = UDim2.fromOffset(0, 22),
+                Size = UDim2.new(1, 0, 0, 32),
+                BackgroundColor3 = theme.Card,
+                BorderSizePixel = 0,
+                Parent = hexContainer,
+            })
+            corner(hexRow, 6)
+            local hexRowStroke = stroke(hexRow, theme.Stroke, 1, 0.5)
+            local hashLbl = new("TextLabel", {
+                Position = UDim2.fromOffset(10, 0),
+                Size = UDim2.fromOffset(14, 32),
+                BackgroundTransparency = 1,
+                Font = Enum.Font.GothamBold,
+                TextSize = 14,
+                TextColor3 = theme.Muted,
+                Text = "#",
+                Parent = hexRow,
+            })
+            local hexBox = new("TextBox", {
+                Position = UDim2.fromOffset(26, 0),
+                Size = UDim2.new(1, -36, 1, 0),
+                BackgroundTransparency = 1,
+                Font = Enum.Font.GothamBold,
+                TextSize = 14,
+                TextColor3 = theme.Text,
+                PlaceholderText = "RRGGBB",
+                PlaceholderColor3 = theme.Muted,
+                Text = rgbToHex(color),
+                TextXAlignment = Enum.TextXAlignment.Left,
+                ClearTextOnFocus = false,
+                Parent = hexRow,
             })
 
-            -- ========== Mode Switching ==========
-            local function switchMode(mode)
-                activeMode = mode
-                hsvFrame.Visible = (mode == "HSV")
-                rgbFrame.Visible = (mode == "RGB")
-                hexFrame.Visible = (mode == "HEX")
-                for m, btn in pairs(modeBtns) do
-                    if m == mode then
-                        tween(btn, 0.12, {BackgroundColor3 = theme.Accent, BackgroundTransparency = 0.15})
-                        btn.TextColor3 = Color3.new(1, 1, 1)
-                    else
-                        tween(btn, 0.12, {BackgroundColor3 = theme.Row, BackgroundTransparency = 0.3})
-                        btn.TextColor3 = theme.SubText
-                    end
-                end
-            end
-            for m, btn in pairs(modeBtns) do
-                btn.MouseButton1Click:Connect(function() switchMode(m) end)
-            end
-            switchMode("HSV")
+            local preview = new("Frame", {
+                Position = UDim2.new(0, 0, 0, MODE_ROW_H + GAP + ZONE_H + GAP),
+                Size = UDim2.new(1, 0, 0, PREVIEW_H),
+                BackgroundColor3 = color,
+                BorderSizePixel = 0,
+                Parent = panel,
+            })
+            corner(preview, 6)
+            stroke(preview, Color3.new(1,1,1), 1, 0.7)
 
-            -- ========== Color Update ==========
+            local activeMode = "HSV"
+            local hexFocused = false
+            local function setModeStyle()
+                for m, data in pairs(modeBtns) do
+                    local active = (m == activeMode)
+                    tween(data.Btn, 0.12, {BackgroundColor3 = active and theme.Accent or theme.Card})
+                    tween(data.Stroke, 0.12, {Transparency = active and 0.1 or 0.5, Color = active and theme.AccentHi or theme.Stroke})
+                    data.Btn.TextColor3 = active and Color3.new(1,1,1) or theme.SubText
+                end
+                hsvContainer.Visible = (activeMode == "HSV")
+                rgbContainer.Visible = (activeMode == "RGB")
+                hexContainer.Visible = (activeMode == "HEX")
+            end
             local function updateColor(fire)
                 color = hsvToRgb(h, s, v)
                 swatch.BackgroundColor3 = color
+                preview.BackgroundColor3 = color
+                -- HSV visuals
                 svArea.BackgroundColor3 = hsvToRgb(h, 1, 1)
                 svCursor.Position = UDim2.fromScale(s, 1 - v)
                 hueCursor.Position = UDim2.new(h, 0, 0.5, 0)
-                -- HSV labels
-                local hsvLabels = hsvFrame:GetChildren()
-                for _, c in ipairs(hsvLabels) do
-                    if c:IsA("TextLabel") and c.Text:find("^H:") then
-                        c.Text = "H: " .. math.round(h * 360)
-                    elseif c:IsA("TextLabel") and c.Text:find("^S:") then
-                        c.Text = "S: " .. math.round(s * 100)
-                    elseif c:IsA("TextLabel") and c.Text:find("^V:") then
-                        c.Text = "V: " .. math.round(v * 100)
-                    end
-                end
-                hsvPreview.BackgroundColor3 = color
-                hsvHexLbl.Text = color3ToHex(color)
-                -- RGB sliders
-                local rV = math.round(color.R * 255)
-                local gV = math.round(color.G * 255)
-                local bV = math.round(color.B * 255)
-                rgbValues[1] = rV
-                rgbValues[2] = gV
-                rgbValues[3] = bV
-                for ci, sl in ipairs(rgbSliders) do
-                    sl.fill.Size = UDim2.fromScale(rgbValues[ci] / 255, 1)
-                    sl.knob.Position = UDim2.fromScale(rgbValues[ci] / 255, 0.5)
-                    sl.valLbl.Text = tostring(rgbValues[ci])
-                end
-                rgbPreview.BackgroundColor3 = color
-                -- HEX
-                local hexStr = color3ToHex(color)
-                hexBox.Text = hexStr
-                hexPreview.BackgroundColor3 = color
-                hexColorLbl.Text = hexStr
-                hexRgbLbl.Text = "R: " .. rV .. "  G: " .. gV .. "  B: " .. bV
-                hexStatusLbl.Text = "Valid"
-                hexStatusLbl.TextColor3 = theme.Success
+                -- RGB visuals
+                local r255, g255, b255 = math.floor(color.R*255+0.5), math.floor(color.G*255+0.5), math.floor(color.B*255+0.5)
+                rGrad.Color = ColorSequence.new(Color3.new(0, color.G, color.B), Color3.new(1, color.G, color.B))
+                gGrad.Color = ColorSequence.new(Color3.new(color.R, 0, color.B), Color3.new(color.R, 1, color.B))
+                bGrad.Color = ColorSequence.new(Color3.new(color.R, color.G, 0), Color3.new(color.R, color.G, 1))
+                rCursor.Position = UDim2.new(r255/255, 0, 0.5, 0)
+                gCursor.Position = UDim2.new(g255/255, 0, 0.5, 0)
+                bCursor.Position = UDim2.new(b255/255, 0, 0.5, 0)
+                rVal.Text, gVal.Text, bVal.Text = tostring(r255), tostring(g255), tostring(b255)
+                -- HEX visual
+                if not hexFocused then hexBox.Text = rgbToHex(color) end
                 if opts.Flag then Library.Flags[opts.Flag] = color end
                 if fire and opts.Callback then task.spawn(opts.Callback, color) end
             end
             updateColor(false)
+            setModeStyle()
 
-            -- ========== HSV Drag ==========
+            for _, m in ipairs(MODES) do
+                modeBtns[m].Btn.MouseButton1Click:Connect(function()
+                    activeMode = m
+                    setModeStyle()
+                end)
+            end
+
             local dragSV, dragHue = false, false
             local function svFromInput(pos)
                 local ap, as = svArea.AbsolutePosition, svArea.AbsoluteSize
@@ -5865,63 +5633,70 @@ function Library:CreateWindow(cfg)
                 end
             end)
 
-            -- ========== RGB Drag ==========
-            local rgbDragging = {false, false, false}
-            for ci, sl in ipairs(rgbSliders) do
-                sl.track.InputBegan:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                        rgbDragging[ci] = true
-                        local ap, as = sl.track.AbsolutePosition, sl.track.AbsoluteSize
-                        local rel = math.clamp((input.Position.X - ap.X) / as.X, 0, 1)
-                        rgbValues[ci] = math.round(rel * 255)
-                        color = Color3.fromRGB(rgbValues[1], rgbValues[2], rgbValues[3])
-                        h, s, v = rgbToHsv(color)
-                        updateColor(false)
-                        if opts.Callback then task.spawn(opts.Callback, color) end
-                    end
-                end)
+            local dragR, dragG, dragB = false, false, false
+            local function setChannel255(which, px)
+                local color255 = {
+                    R = math.floor(color.R*255+0.5),
+                    G = math.floor(color.G*255+0.5),
+                    B = math.floor(color.B*255+0.5),
+                }
+                color255[which] = math.clamp(px, 0, 255)
+                color = Color3.fromRGB(color255.R, color255.G, color255.B)
+                h, s, v = rgbToHsv(color)
+                updateColor(true)
             end
+            local function channelFromInput(bar, which, pos)
+                local ap, as = bar.AbsolutePosition, bar.AbsoluteSize
+                local rel = math.clamp((pos.X - ap.X) / as.X, 0, 1)
+                setChannel255(which, math.floor(rel * 255 + 0.5))
+            end
+            rBar.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    dragR = true; channelFromInput(rBar, "R", input.Position)
+                end
+            end)
+            gBar.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    dragG = true; channelFromInput(gBar, "G", input.Position)
+                end
+            end)
+            bBar.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    dragB = true; channelFromInput(bBar, "B", input.Position)
+                end
+            end)
+            UserInputService.InputChanged:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                    if dragSV  then svFromInput(input.Position)  end
+                    if dragHue then hueFromInput(input.Position) end
+                    if dragR then channelFromInput(rBar, "R", input.Position) end
+                    if dragG then channelFromInput(gBar, "G", input.Position) end
+                    if dragB then channelFromInput(bBar, "B", input.Position) end
+                end
+            end)
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    dragSV, dragHue, dragR, dragG, dragB = false, false, false, false, false
+                end
+            end)
 
-            -- ========== HEX Input ==========
-            hexBox.FocusLost:Connect(function()
-                local parsed = hexToColor3(hexBox.Text)
+            hexBox.Focused:Connect(function()
+                hexFocused = true
+                tween(hexRowStroke, 0.15, {Transparency = 0.1, Color = theme.AccentHi})
+            end)
+            hexBox.FocusLost:Connect(function(enter)
+                hexFocused = false
+                tween(hexRowStroke, 0.15, {Transparency = 0.5, Color = theme.Stroke})
+                local parsed = hexToRgb(hexBox.Text)
                 if parsed then
                     color = parsed
                     h, s, v = rgbToHsv(color)
                     updateColor(true)
                 else
-                    hexStatusLbl.Text = "Invalid HEX"
-                    hexStatusLbl.TextColor3 = theme.Danger
-                    hexBox.Text = color3ToHex(color)
+                    hexBox.Text = rgbToHex(color)
                 end
             end)
 
-            -- ========== Global Input Handlers ==========
-            UserInputService.InputChanged:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-                    if dragSV then svFromInput(input.Position) end
-                    if dragHue then hueFromInput(input.Position) end
-                    for ci, sl in ipairs(rgbSliders) do
-                        if rgbDragging[ci] then
-                            local ap, as = sl.track.AbsolutePosition, sl.track.AbsoluteSize
-                            local rel = math.clamp((input.Position.X - ap.X) / as.X, 0, 1)
-                            rgbValues[ci] = math.round(rel * 255)
-                            color = Color3.fromRGB(rgbValues[1], rgbValues[2], rgbValues[3])
-                            h, s, v = rgbToHsv(color)
-                            updateColor(false)
-                            if opts.Callback then task.spawn(opts.Callback, color) end
-                        end
-                    end
-                end
-            end)
-            UserInputService.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                    dragSV, dragHue = false, false
-                    rgbDragging = {false, false, false}
-                end
-            end)
-
-            -- ========== Open/Close ==========
             local open = false
             swatch.MouseButton1Click:Connect(function()
                 open = not open
@@ -5937,6 +5712,7 @@ function Library:CreateWindow(cfg)
             addOrder(row)
             registerSearch(opts.Name, row, "colorpicker", opts.Flag, nil)
             local obj = {}
+            obj.Instance = row
             function obj:Set(c)
                 color = c
                 h, s, v = rgbToHsv(c)
@@ -5945,6 +5721,129 @@ function Library:CreateWindow(cfg)
             function obj:Get() return color end
             registerFlagControl(opts.Flag, obj)
             return obj
+        end
+        function Tab:CreateSubTab(subTabName)
+            if not Tab._subNav then
+                local navHolder = new("Frame", {
+                    BackgroundTransparency = 1,
+                    Size = UDim2.new(1, -8, 0, 36),
+                    Parent = nil,
+                })
+                local navScroll = new("ScrollingFrame", {
+                    Size = UDim2.fromScale(1, 1),
+                    BackgroundTransparency = 1,
+                    BorderSizePixel = 0,
+                    CanvasSize = UDim2.new(0, 0, 0, 0),
+                    AutomaticCanvasSize = Enum.AutomaticSize.X,
+                    ScrollingDirection = Enum.ScrollingDirection.X,
+                    ScrollBarThickness = 3,
+                    ScrollBarImageColor3 = theme.Accent,
+                    ScrollBarImageTransparency = 0.5,
+                    Parent = navHolder,
+                })
+                local navLayout = new("UIListLayout", {
+                    FillDirection = Enum.FillDirection.Horizontal,
+                    SortOrder = Enum.SortOrder.LayoutOrder,
+                    Padding = UDim.new(0, 8),
+                    VerticalAlignment = Enum.VerticalAlignment.Center,
+                    Parent = navScroll,
+                })
+                local body = new("Frame", {
+                    BackgroundTransparency = 1,
+                    Size = UDim2.new(1, -8, 0, 0),
+                    AutomaticSize = Enum.AutomaticSize.Y,
+                    Parent = nil,
+                })
+                addOrder(navHolder)
+                addOrder(body)
+                Tab._subNav = { holder = navHolder, body = body, tabs = {}, active = nil }
+            end
+            local nav = Tab._subNav
+            local SubTab = {}
+            SubTab.Name = subTabName
+
+            local btn = new("TextButton", {
+                Size = UDim2.fromOffset(0, 30),
+                AutomaticSize = Enum.AutomaticSize.X,
+                BackgroundColor3 = theme.Card,
+                Text = "",
+                AutoButtonColor = false,
+                Parent = nav.holder:FindFirstChildOfClass("ScrollingFrame"),
+            })
+            corner(btn, 8)
+            local btnStroke = stroke(btn, theme.Stroke, 1, 0.5)
+            padding(btn, 0, 14, 0, 14)
+            local btnLbl = new("TextLabel", {
+                Size = UDim2.fromScale(1, 1),
+                BackgroundTransparency = 1,
+                Font = Enum.Font.GothamBold,
+                TextSize = 12,
+                TextColor3 = theme.SubText,
+                Text = subTabName,
+                Parent = btn,
+            })
+
+            local subPage = new("Frame", {
+                Name = "SubPage_" .. subTabName,
+                Size = UDim2.new(1, 0, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.Y,
+                BackgroundTransparency = 1,
+                Visible = false,
+                Parent = nav.body,
+            })
+            new("UIListLayout", {
+                FillDirection = Enum.FillDirection.Vertical,
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Padding = UDim.new(0, 10),
+                Parent = subPage,
+            })
+            local subOrder = 0
+            local function subAddOrder(inst)
+                subOrder = subOrder + 1
+                inst.LayoutOrder = subOrder
+                inst.Parent = subPage
+            end
+
+            local function select()
+                for _, t in ipairs(nav.tabs) do
+                    t.Page.Visible = false
+                    tween(t.Button, 0.12, {BackgroundColor3 = theme.Card})
+                    tween(t.Stroke, 0.12, {Transparency = 0.5, Color = theme.Stroke})
+                    t.Label.TextColor3 = theme.SubText
+                end
+                subPage.Visible = true
+                tween(btn, 0.12, {BackgroundColor3 = theme.Accent})
+                tween(btnStroke, 0.12, {Transparency = 0.1, Color = theme.AccentHi})
+                btnLbl.TextColor3 = Color3.new(1, 1, 1)
+                nav.active = SubTab
+            end
+            btn.MouseButton1Down:Connect(function(x, y) ripple(btn, x, y, theme.AccentHi) end)
+            btn.MouseButton1Click:Connect(select)
+
+            SubTab.Button = btn
+            SubTab.Stroke = btnStroke
+            SubTab.Label = btnLbl
+            SubTab.Page = subPage
+            table.insert(nav.tabs, SubTab)
+            if #nav.tabs == 1 then select() end
+
+            -- reuse the parent Tab's component builders, then move the created
+            -- instance out of the main page into this sub-tab's page
+            local WRAPPED = {
+                "CreateSection", "CreateDivider", "CreateLabel", "CreateParagraph",
+                "CreateButton", "CreateToggle", "CreateSlider", "CreateDropdown",
+                "CreateInput", "CreateKeybind", "CreateColorPicker",
+            }
+            for _, fnName in ipairs(WRAPPED) do
+                SubTab[fnName] = function(_, a)
+                    local obj = Tab[fnName](Tab, a)
+                    if obj and obj.Instance then
+                        subAddOrder(obj.Instance)
+                    end
+                    return obj
+                end
+            end
+            return SubTab
         end
         function Tab:CreateWhatsNew(opts)
             opts = opts or {}
