@@ -249,21 +249,29 @@ local function buildUI()
     trafficDot.MouseEnter:Connect(function() TweenService:Create(trafficMark, TweenInfo.new(0.15), {TextTransparency = 0}):Play() end)
     trafficDot.MouseLeave:Connect(function() TweenService:Create(trafficMark, TweenInfo.new(0.15), {TextTransparency = 1}):Play() end)
 
+    -- Settings gear moved to BOTTOM of sidebar (other side) and enlarged for mobile usability
+    local settingsGearSize = 40
     local settingsDot = Instance.new("TextButton")
-    settingsDot.Name = "SettingsGear"; settingsDot.Size = UDim2.fromOffset(12, 12); settingsDot.Position = UDim2.fromOffset(32, 14)
+    settingsDot.Name = "SettingsGear"; settingsDot.Size = UDim2.fromOffset(settingsGearSize, settingsGearSize)
+    settingsDot.Position = UDim2.new(0.5, -settingsGearSize/2, 1, -(settingsGearSize + 14))
     settingsDot.BackgroundColor3 = Color3.fromRGB(60, 52, 55); settingsDot.AutoButtonColor = false; settingsDot.Text = ""
     settingsDot.ZIndex = 6; settingsDot.Parent = sidebar
     Instance.new("UICorner", settingsDot).CornerRadius = UDim.new(1, 0)
     local settingsMark = Instance.new("TextLabel")
     settingsMark.Size = UDim2.new(1, 0, 1, 0); settingsMark.BackgroundTransparency = 1; settingsMark.Font = Enum.Font.GothamBold
-    settingsMark.TextSize = 8; settingsMark.Text = "⚙"; settingsMark.TextColor3 = Color3.fromRGB(226, 88, 115)
+    settingsMark.TextSize = 22; settingsMark.Text = "⚙"; settingsMark.TextColor3 = Color3.fromRGB(226, 88, 115)
     settingsMark.ZIndex = 7; settingsMark.Parent = settingsDot
+    -- Divider above the gear for visual separation
+    local settingsDivider = Instance.new("Frame")
+    settingsDivider.Size = UDim2.new(1, -24, 0, 1); settingsDivider.Position = UDim2.new(0, 12, 1, -(settingsGearSize + 22))
+    settingsDivider.BackgroundColor3 = Color3.fromRGB(255, 255, 255); settingsDivider.BackgroundTransparency = 0.94
+    settingsDivider.BorderSizePixel = 0; settingsDivider.ZIndex = 3; settingsDivider.Parent = sidebar
     settingsDot.MouseEnter:Connect(function() TweenService:Create(settingsDot, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(80, 68, 72)}):Play() end)
     settingsDot.MouseLeave:Connect(function() TweenService:Create(settingsDot, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(60, 52, 55)}):Play() end)
     settingsDot.MouseButton1Click:Connect(function() setTabActive("Settings") end)
 
     local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, -56, 0, 20); title.Position = UDim2.fromOffset(54, 10); title.BackgroundTransparency = 1
+    title.Size = UDim2.new(1, -68, 0, 20); title.Position = UDim2.fromOffset(32, 10); title.BackgroundTransparency = 1
     title.Font = Enum.Font.GothamBold; title.TextSize = 15; title.Text = "◆ NOIR"
     title.TextColor3 = Color3.fromRGB(240, 235, 236); title.TextXAlignment = Enum.TextXAlignment.Left; title.ZIndex = 3; title.Parent = sidebar
 
@@ -273,7 +281,7 @@ local function buildUI()
     titleDivider.BorderSizePixel = 0; titleDivider.ZIndex = 3; titleDivider.Parent = sidebar
 
     local tabsHolder = Instance.new("ScrollingFrame")
-    tabsHolder.Name = "TabsHolder"; tabsHolder.Size = UDim2.new(1, -16, 1, -60); tabsHolder.Position = UDim2.fromOffset(8, 52)
+    tabsHolder.Name = "TabsHolder"; tabsHolder.Size = UDim2.new(1, -16, 1, -120); tabsHolder.Position = UDim2.fromOffset(8, 52)
     tabsHolder.BackgroundTransparency = 1; tabsHolder.ScrollBarThickness = 2; tabsHolder.ScrollBarImageColor3 = Color3.fromRGB(216, 68, 99)
     tabsHolder.ScrollBarImageTransparency = 0.5; tabsHolder.CanvasSize = UDim2.new(0, 0, 0, 0)
     tabsHolder.AutomaticCanvasSize = Enum.AutomaticSize.Y; tabsHolder.ZIndex = 3; tabsHolder.Parent = sidebar
@@ -1039,6 +1047,8 @@ local function createTab(tabName, isSettings)
 
     local function addColorPicker(options)
         local current = options.default or Color3.fromRGB(196, 48, 79)
+        -- Forward declaration so preset-button closures can reference setColor
+        local setColor
 
         local row = Instance.new("Frame"); row.Size = UDim2.new(1, 0, 0, 30); row.BackgroundColor3 = Color3.fromRGB(36, 30, 32); row.BorderSizePixel = 0; row.ZIndex = 2; row.LayoutOrder = getNextLayoutOrder(); row.Parent = scroll
         polishRow(row)
@@ -1048,46 +1058,47 @@ local function createTab(tabName, isSettings)
         Instance.new("UICorner", swatch).CornerRadius = UDim.new(0, 6)
         local swatchStroke = Instance.new("UIStroke"); swatchStroke.Color = Color3.fromRGB(196, 48, 79); swatchStroke.Thickness = 1; swatchStroke.Transparency = 0.4; swatchStroke.Parent = swatch
 
-        -- Popup panel: opens as a floating "screen" over the whole UI, like a real color picker
+        -- Popup panel: opens as a floating layer OVER the main UI only (dim does NOT exceed main UI height)
         local popupLayer = Instance.new("Frame")
         popupLayer.Name = "ColorPickerLayer"; popupLayer.Size = UDim2.new(1, 0, 1, 0); popupLayer.BackgroundTransparency = 1
-        popupLayer.Visible = false; popupLayer.ZIndex = 200; popupLayer.Parent = UI.mainFrame
+        popupLayer.Visible = false; popupLayer.ZIndex = 1000; popupLayer.Parent = UI.mainFrame
 
         local popupDim = Instance.new("TextButton")
         popupDim.Size = UDim2.new(1, 0, 1, 0); popupDim.BackgroundColor3 = Color3.fromRGB(0, 0, 0); popupDim.BackgroundTransparency = 0.35
-        popupDim.Text = ""; popupDim.AutoButtonColor = false; popupDim.ZIndex = 200; popupDim.Parent = popupLayer
+        popupDim.Text = ""; popupDim.AutoButtonColor = false; popupDim.ZIndex = 1000; popupDim.Parent = popupLayer
 
         local panel = Instance.new("Frame")
-        panel.Size = UDim2.fromOffset(210, 250); panel.AnchorPoint = Vector2.new(0.5, 0.5); panel.Position = UDim2.new(0.5, 0, 0.5, 0)
-        panel.BackgroundColor3 = Color3.fromRGB(26, 21, 23); panel.BorderSizePixel = 0; panel.ZIndex = 201; panel.Parent = popupLayer
+        panel.Size = UDim2.fromOffset(220, 300); panel.AnchorPoint = Vector2.new(0.5, 0.5); panel.Position = UDim2.new(0.5, 0, 0.5, 0)
+        panel.BackgroundColor3 = Color3.fromRGB(26, 21, 23); panel.BorderSizePixel = 0; panel.ZIndex = 1001; panel.Parent = popupLayer
+        panel.ClipsDescendants = true
         Instance.new("UICorner", panel).CornerRadius = UDim.new(0, 12)
         local panelStroke = Instance.new("UIStroke"); panelStroke.Color = Color3.fromRGB(196, 48, 79); panelStroke.Thickness = 1.5; panelStroke.Transparency = 0.3; panelStroke.Parent = panel
 
         local panelTitle = Instance.new("TextLabel")
         panelTitle.Size = UDim2.new(1, -40, 0, 24); panelTitle.Position = UDim2.fromOffset(14, 10); panelTitle.BackgroundTransparency = 1
         panelTitle.Font = Enum.Font.GothamBold; panelTitle.TextSize = 12; panelTitle.TextColor3 = Color3.fromRGB(220, 210, 213); panelTitle.TextXAlignment = Enum.TextXAlignment.Left
-        panelTitle.Text = options.label or "Color"; panelTitle.ZIndex = 202; panelTitle.Parent = panel
+        panelTitle.Text = options.label or "Color"; panelTitle.ZIndex = 1002; panelTitle.Parent = panel
 
         local closeX = Instance.new("TextButton")
         closeX.Size = UDim2.fromOffset(22, 22); closeX.Position = UDim2.new(1, -32, 0, 8); closeX.BackgroundTransparency = 1
-        closeX.Font = Enum.Font.GothamBold; closeX.TextSize = 14; closeX.TextColor3 = Color3.fromRGB(160, 150, 153); closeX.Text = "×"; closeX.ZIndex = 202; closeX.Parent = panel
+        closeX.Font = Enum.Font.GothamBold; closeX.TextSize = 14; closeX.TextColor3 = Color3.fromRGB(160, 150, 153); closeX.Text = "×"; closeX.ZIndex = 1002; closeX.Parent = panel
 
         -- SV square: hue-tinted background, white->transparent gradient, transparent->black gradient
         local svSquare = Instance.new("Frame")
-        svSquare.Size = UDim2.fromOffset(182, 130); svSquare.Position = UDim2.fromOffset(14, 40)
+        svSquare.Size = UDim2.fromOffset(192, 130); svSquare.Position = UDim2.fromOffset(14, 40)
         svSquare.BackgroundColor3 = Color3.fromRGB(255, 0, 0); svSquare.BorderSizePixel = 0; svSquare.ClipsDescendants = true
-        svSquare.ZIndex = 202; svSquare.Parent = panel
+        svSquare.ZIndex = 1002; svSquare.Parent = panel
         Instance.new("UICorner", svSquare).CornerRadius = UDim.new(0, 8)
 
         local svWhite = Instance.new("Frame")
-        svWhite.Size = UDim2.new(1, 0, 1, 0); svWhite.BackgroundColor3 = Color3.new(1, 1, 1); svWhite.BorderSizePixel = 0; svWhite.ZIndex = 203; svWhite.Parent = svSquare
+        svWhite.Size = UDim2.new(1, 0, 1, 0); svWhite.BackgroundColor3 = Color3.new(1, 1, 1); svWhite.BorderSizePixel = 0; svWhite.ZIndex = 1003; svWhite.Parent = svSquare
         local svWhiteGrad = Instance.new("UIGradient")
         svWhiteGrad.Color = ColorSequence.new(Color3.new(1, 1, 1))
         svWhiteGrad.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1)})
         svWhiteGrad.Parent = svWhite
 
         local svBlack = Instance.new("Frame")
-        svBlack.Size = UDim2.new(1, 0, 1, 0); svBlack.BackgroundColor3 = Color3.new(0, 0, 0); svBlack.BorderSizePixel = 0; svBlack.ZIndex = 204; svBlack.Parent = svSquare
+        svBlack.Size = UDim2.new(1, 0, 1, 0); svBlack.BackgroundColor3 = Color3.new(0, 0, 0); svBlack.BorderSizePixel = 0; svBlack.ZIndex = 1004; svBlack.Parent = svSquare
         local svBlackGrad = Instance.new("UIGradient")
         svBlackGrad.Color = ColorSequence.new(Color3.new(0, 0, 0))
         svBlackGrad.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 0)})
@@ -1096,14 +1107,14 @@ local function createTab(tabName, isSettings)
 
         local svCursor = Instance.new("Frame")
         svCursor.Size = UDim2.fromOffset(12, 12); svCursor.AnchorPoint = Vector2.new(0.5, 0.5); svCursor.BackgroundColor3 = Color3.new(1, 1, 1)
-        svCursor.BorderSizePixel = 0; svCursor.ZIndex = 206; svCursor.Parent = svSquare
+        svCursor.BorderSizePixel = 0; svCursor.ZIndex = 1006; svCursor.Parent = svSquare
         Instance.new("UICorner", svCursor).CornerRadius = UDim.new(1, 0)
         local svCursorStroke = Instance.new("UIStroke"); svCursorStroke.Color = Color3.fromRGB(20, 17, 18); svCursorStroke.Thickness = 2; svCursorStroke.Parent = svCursor
 
         -- Hue strip: full rainbow gradient
         local hueBar = Instance.new("Frame")
-        hueBar.Size = UDim2.fromOffset(182, 16); hueBar.Position = UDim2.fromOffset(14, 178)
-        hueBar.BackgroundColor3 = Color3.new(1, 1, 1); hueBar.BorderSizePixel = 0; hueBar.ZIndex = 202; hueBar.Parent = panel
+        hueBar.Size = UDim2.fromOffset(192, 16); hueBar.Position = UDim2.fromOffset(14, 178)
+        hueBar.BackgroundColor3 = Color3.new(1, 1, 1); hueBar.BorderSizePixel = 0; hueBar.ZIndex = 1002; hueBar.Parent = panel
         Instance.new("UICorner", hueBar).CornerRadius = UDim.new(0, 8)
         local hueGrad = Instance.new("UIGradient")
         hueGrad.Color = ColorSequence.new({
@@ -1119,23 +1130,67 @@ local function createTab(tabName, isSettings)
 
         local hueCursor = Instance.new("Frame")
         hueCursor.Size = UDim2.fromOffset(6, 22); hueCursor.AnchorPoint = Vector2.new(0.5, 0.5); hueCursor.Position = UDim2.new(0, 0, 0.5, 0)
-        hueCursor.BackgroundColor3 = Color3.new(1, 1, 1); hueCursor.BorderSizePixel = 0; hueCursor.ZIndex = 206; hueCursor.Parent = hueBar
+        hueCursor.BackgroundColor3 = Color3.new(1, 1, 1); hueCursor.BorderSizePixel = 0; hueCursor.ZIndex = 1006; hueCursor.Parent = hueBar
         Instance.new("UICorner", hueCursor).CornerRadius = UDim.new(0, 3)
         local hueCursorStroke = Instance.new("UIStroke"); hueCursorStroke.Color = Color3.fromRGB(20, 17, 18); hueCursorStroke.Thickness = 1.5; hueCursorStroke.Parent = hueCursor
 
         -- Hex input + live preview swatch
         local hexBox = Instance.new("TextBox")
-        hexBox.Size = UDim2.fromOffset(134, 26); hexBox.Position = UDim2.fromOffset(14, 206); hexBox.BackgroundColor3 = Color3.fromRGB(36, 30, 32)
+        hexBox.Size = UDim2.fromOffset(144, 26); hexBox.Position = UDim2.fromOffset(14, 206); hexBox.BackgroundColor3 = Color3.fromRGB(36, 30, 32)
         hexBox.BorderSizePixel = 0; hexBox.Font = Enum.Font.GothamBold; hexBox.TextSize = 11; hexBox.TextColor3 = Color3.fromRGB(220, 210, 213)
-        hexBox.PlaceholderText = "#RRGGBB"; hexBox.ClearTextOnFocus = false; hexBox.Text = colorToHex(current); hexBox.ZIndex = 202; hexBox.Parent = panel
+        hexBox.PlaceholderText = "#RRGGBB"; hexBox.ClearTextOnFocus = false; hexBox.Text = colorToHex(current); hexBox.ZIndex = 1002; hexBox.Parent = panel
         Instance.new("UICorner", hexBox).CornerRadius = UDim.new(0, 6)
         local hexPad = Instance.new("UIPadding"); hexPad.PaddingLeft = UDim.new(0, 8); hexPad.Parent = hexBox
 
         local previewSwatch = Instance.new("Frame")
-        previewSwatch.Size = UDim2.fromOffset(34, 26); previewSwatch.Position = UDim2.fromOffset(154, 206); previewSwatch.BackgroundColor3 = current
-        previewSwatch.BorderSizePixel = 0; previewSwatch.ZIndex = 202; previewSwatch.Parent = panel
+        previewSwatch.Size = UDim2.fromOffset(38, 26); previewSwatch.Position = UDim2.fromOffset(168, 206); previewSwatch.BackgroundColor3 = current
+        previewSwatch.BorderSizePixel = 0; previewSwatch.ZIndex = 1002; previewSwatch.Parent = panel
         Instance.new("UICorner", previewSwatch).CornerRadius = UDim.new(0, 6)
         local previewStroke = Instance.new("UIStroke"); previewStroke.Color = Color3.fromRGB(255, 255, 255); previewStroke.Thickness = 1; previewStroke.Transparency = 0.8; previewStroke.Parent = previewSwatch
+
+        -- Presets label
+        local presetsLabel = Instance.new("TextLabel")
+        presetsLabel.Size = UDim2.new(1, -28, 0, 14); presetsLabel.Position = UDim2.fromOffset(14, 240)
+        presetsLabel.BackgroundTransparency = 1; presetsLabel.Font = Enum.Font.GothamBold; presetsLabel.TextSize = 10
+        presetsLabel.TextColor3 = Color3.fromRGB(160, 150, 153); presetsLabel.TextXAlignment = Enum.TextXAlignment.Left
+        presetsLabel.Text = "PRESETS"; presetsLabel.ZIndex = 1002; presetsLabel.Parent = panel
+
+        -- Presets grid: 8 columns x 2 rows = 16 quick-pick colors
+        local presetsContainer = Instance.new("Frame")
+        presetsContainer.Size = UDim2.fromOffset(192, 39); presetsContainer.Position = UDim2.fromOffset(14, 256)
+        presetsContainer.BackgroundTransparency = 1; presetsContainer.ZIndex = 1002; presetsContainer.Parent = panel
+        local presetsGrid = Instance.new("UIGridLayout")
+        presetsGrid.CellSize = UDim2.fromOffset(18, 18); presetsGrid.CellPadding = UDim2.fromOffset(3, 3)
+        presetsGrid.SortOrder = Enum.SortOrder.LayoutOrder; presetsGrid.Parent = presetsContainer
+
+        local presetColors = {
+            Color3.fromRGB(255, 59, 48),   -- red
+            Color3.fromRGB(255, 149, 0),   -- orange
+            Color3.fromRGB(255, 204, 0),   -- yellow
+            Color3.fromRGB(52, 199, 89),   -- green
+            Color3.fromRGB(0, 199, 190),   -- teal
+            Color3.fromRGB(90, 200, 250),  -- light blue
+            Color3.fromRGB(0, 122, 255),   -- blue
+            Color3.fromRGB(88, 86, 214),   -- indigo
+            Color3.fromRGB(175, 82, 222),  -- purple
+            Color3.fromRGB(255, 45, 85),   -- pink
+            Color3.fromRGB(162, 132, 94),  -- brown
+            Color3.fromRGB(142, 142, 147), -- gray
+            Color3.fromRGB(199, 199, 204), -- light gray
+            Color3.fromRGB(255, 255, 255), -- white
+            Color3.fromRGB(0, 0, 0),       -- black
+            Color3.fromRGB(196, 48, 79),   -- accent dark red
+        }
+        for _, presetColor in ipairs(presetColors) do
+            local sw = Instance.new("TextButton")
+            sw.Size = UDim2.fromOffset(18, 18); sw.BackgroundColor3 = presetColor; sw.BorderSizePixel = 0
+            sw.Text = ""; sw.AutoButtonColor = false; sw.ZIndex = 1003; sw.Parent = presetsContainer
+            Instance.new("UICorner", sw).CornerRadius = UDim.new(0, 4)
+            local swStroke = Instance.new("UIStroke"); swStroke.Color = Color3.fromRGB(255, 255, 255); swStroke.Thickness = 1; swStroke.Transparency = 0.7; swStroke.Parent = sw
+            sw.MouseEnter:Connect(function() TweenService:Create(sw, TweenInfo.new(0.12), {Size = UDim2.fromOffset(22, 22)}):Play() end)
+            sw.MouseLeave:Connect(function() TweenService:Create(sw, TweenInfo.new(0.12), {Size = UDim2.fromOffset(18, 18)}):Play() end)
+            sw.MouseButton1Click:Connect(function() setColor(presetColor, true) end)
+        end
 
         local hue0, sat0, val0 = current:ToHSV()
         local hue, sat, val = hue0, sat0, val0
@@ -1147,7 +1202,7 @@ local function createTab(tabName, isSettings)
             hueCursor.Position = UDim2.new(hue, 0, 0.5, 0)
         end
 
-        local function setColor(c, fire)
+        function setColor(c, fire)
             current = c
             hue, sat, val = c:ToHSV()
             swatch.BackgroundColor3 = c
@@ -1203,13 +1258,13 @@ local function createTab(tabName, isSettings)
         local function openPopup()
             popupLayer.Visible = true
             popupDim.BackgroundTransparency = 1
-            panel.Size = UDim2.fromOffset(190, 230)
+            panel.Size = UDim2.fromOffset(200, 280)
             TweenService:Create(popupDim, TweenInfo.new(0.15), {BackgroundTransparency = 0.35}):Play()
-            TweenService:Create(panel, TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(210, 250)}):Play()
+            TweenService:Create(panel, TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(220, 300)}):Play()
         end
         local function closePopup()
             TweenService:Create(popupDim, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
-            local tw = TweenService:Create(panel, TweenInfo.new(0.15), {Size = UDim2.fromOffset(190, 230)})
+            local tw = TweenService:Create(panel, TweenInfo.new(0.15), {Size = UDim2.fromOffset(200, 280)})
             tw:Play()
             tw.Completed:Connect(function() popupLayer.Visible = false end)
         end
