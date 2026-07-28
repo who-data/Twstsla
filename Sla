@@ -249,8 +249,21 @@ local function buildUI()
     trafficDot.MouseEnter:Connect(function() TweenService:Create(trafficMark, TweenInfo.new(0.15), {TextTransparency = 0}):Play() end)
     trafficDot.MouseLeave:Connect(function() TweenService:Create(trafficMark, TweenInfo.new(0.15), {TextTransparency = 1}):Play() end)
 
+    local settingsDot = Instance.new("TextButton")
+    settingsDot.Name = "SettingsGear"; settingsDot.Size = UDim2.fromOffset(12, 12); settingsDot.Position = UDim2.fromOffset(32, 14)
+    settingsDot.BackgroundColor3 = Color3.fromRGB(60, 52, 55); settingsDot.AutoButtonColor = false; settingsDot.Text = ""
+    settingsDot.ZIndex = 6; settingsDot.Parent = sidebar
+    Instance.new("UICorner", settingsDot).CornerRadius = UDim.new(1, 0)
+    local settingsMark = Instance.new("TextLabel")
+    settingsMark.Size = UDim2.new(1, 0, 1, 0); settingsMark.BackgroundTransparency = 1; settingsMark.Font = Enum.Font.GothamBold
+    settingsMark.TextSize = 8; settingsMark.Text = "⚙"; settingsMark.TextColor3 = Color3.fromRGB(226, 88, 115)
+    settingsMark.ZIndex = 7; settingsMark.Parent = settingsDot
+    settingsDot.MouseEnter:Connect(function() TweenService:Create(settingsDot, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(80, 68, 72)}):Play() end)
+    settingsDot.MouseLeave:Connect(function() TweenService:Create(settingsDot, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(60, 52, 55)}):Play() end)
+    settingsDot.MouseButton1Click:Connect(function() setTabActive("Settings") end)
+
     local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, -34, 0, 20); title.Position = UDim2.fromOffset(32, 10); title.BackgroundTransparency = 1
+    title.Size = UDim2.new(1, -56, 0, 20); title.Position = UDim2.fromOffset(54, 10); title.BackgroundTransparency = 1
     title.Font = Enum.Font.GothamBold; title.TextSize = 15; title.Text = "◆ NOIR"
     title.TextColor3 = Color3.fromRGB(240, 235, 236); title.TextXAlignment = Enum.TextXAlignment.Left; title.ZIndex = 3; title.Parent = sidebar
 
@@ -333,17 +346,17 @@ local function buildUI()
 
     -- Mobile toggle button (transparent, draggable)
     local mobileBtn = Instance.new("TextButton")
-    mobileBtn.Name = "MobileToggle"; mobileBtn.Size = UDim2.fromOffset(45, 45)
-    mobileBtn.Position = UDim2.new(0.5, -22, 0.1, 0)
+    mobileBtn.Name = "MobileToggle"; mobileBtn.Size = UDim2.fromOffset(46, 46)
+    mobileBtn.Position = UDim2.new(0.5, -23, 0, 90)
     mobileBtn.BackgroundColor3 = Color3.fromRGB(18, 16, 17) -- Same as main UI
-    mobileBtn.BackgroundTransparency = 0.2
+    mobileBtn.BackgroundTransparency = 0.1
     mobileBtn.Text = "◆"
     mobileBtn.Font = Enum.Font.GothamBold
-    mobileBtn.TextSize = 22
+    mobileBtn.TextSize = 20
     mobileBtn.TextColor3 = Color3.fromRGB(240, 235, 236)
-    mobileBtn.AutoButtonColor = false; mobileBtn.ZIndex = 11; mobileBtn.Parent = screenGui
+    mobileBtn.AutoButtonColor = false; mobileBtn.ZIndex = 999; mobileBtn.Visible = settings.showMobileBtn ~= false; mobileBtn.Parent = screenGui
     
-    Instance.new("UICorner", mobileBtn).CornerRadius = UDim.new(1, 0)
+    Instance.new("UICorner", mobileBtn).CornerRadius = UDim.new(0, 12)
     
     local mobileBtnStroke = Instance.new("UIStroke")
     mobileBtnStroke.Color = Color3.fromRGB(196, 48, 79) -- Same as main UI
@@ -763,10 +776,10 @@ local function createTab(tabName, isSettings)
         local dragging = false
         local sBtn = Instance.new("TextButton"); sBtn.Size = UDim2.new(1, 0, 2, 10); sBtn.Position = UDim2.new(0, 0, -0.5, -5); sBtn.BackgroundTransparency = 1; sBtn.Text = ""; sBtn.ZIndex = 10; sBtn.Parent = sliderBg
         
-        sBtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end end)
-        UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
+        sBtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then dragging = true; local r = math.clamp((i.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1); setVal(min + (max - min) * r, false, false) end end)
+        UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then dragging = false end end)
         UserInputService.InputChanged:Connect(function(i) 
-            if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then 
+            if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then 
                 local r = math.clamp((i.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1)
                 setVal(min + (max - min) * r, false, false)
             end 
@@ -972,9 +985,9 @@ local function createTab(tabName, isSettings)
         end
         valInput.FocusLost:Connect(function() local nv = tonumber(valInput.Text); if nv then setVal(nv, true, false) else valInput.Text = tostring(value) end end)
         local dragging = false; local sBtn = Instance.new("TextButton"); sBtn.Size = UDim2.new(1, 0, 2, 10); sBtn.Position = UDim2.new(0, 0, -0.5, -5); sBtn.BackgroundTransparency = 1; sBtn.Text = ""; sBtn.ZIndex = 10; sBtn.Parent = sliderBg
-        sBtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end end)
-        UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
-        UserInputService.InputChanged:Connect(function(i) if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then local r = math.clamp((i.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1); setVal(min + (max - min) * r, false, false) end end)
+        sBtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then dragging = true; local r = math.clamp((i.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1); setVal(min + (max - min) * r, false, false) end end)
+        UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then dragging = false end end)
+        UserInputService.InputChanged:Connect(function(i) if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then local r = math.clamp((i.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0, 1); setVal(min + (max - min) * r, false, false) end end)
         
         setVal(value, false, true)
         registerControl(options.idT, options.defaultT or false, function() return state end, function(v, silent) applyT(v, false); if not silent and options.onChangeT then options.onChangeT(v) end end)
@@ -1013,10 +1026,10 @@ local function createTab(tabName, isSettings)
         apply(val, false)
 
         local dragBtn = Instance.new("TextButton"); dragBtn.Size = UDim2.new(1, 0, 2, 10); dragBtn.Position = UDim2.new(0, 0, -0.5, -5); dragBtn.BackgroundTransparency = 1; dragBtn.Text = ""; dragBtn.ZIndex = 10; dragBtn.Parent = track
-        dragBtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end end)
-        UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
+        dragBtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then dragging = true; local r = math.clamp((i.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1); apply(min + (max - min) * r, true) end end)
+        UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then dragging = false end end)
         UserInputService.InputChanged:Connect(function(i)
-            if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+            if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
                 local r = math.clamp((i.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
                 apply(min + (max - min) * r, true)
             end
@@ -1025,108 +1038,184 @@ local function createTab(tabName, isSettings)
     end
 
     local function addColorPicker(options)
-        local expanded = false
-        local mode = "RGB"
         local current = options.default or Color3.fromRGB(196, 48, 79)
-        local updating = false
 
-        local outer = Instance.new("Frame"); outer.Size = UDim2.new(1, 0, 0, 30); outer.BackgroundColor3 = Color3.fromRGB(36, 30, 32); outer.BorderSizePixel = 0; outer.ClipsDescendants = true; outer.ZIndex = 2; outer.LayoutOrder = getNextLayoutOrder(); outer.Parent = scroll
-        do local s = Instance.new("UIStroke"); s.Color = Color3.fromRGB(255, 255, 255); s.Thickness = 1; s.Transparency = 0.93; s.Parent = outer end
-        Instance.new("UICorner", outer).CornerRadius = UDim.new(0, 8)
-
-        local header = Instance.new("Frame"); header.Size = UDim2.new(1, 0, 0, 30); header.BackgroundTransparency = 1; header.ZIndex = 3; header.Parent = outer
-        local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(1, -70, 1, 0); lbl.Position = UDim2.fromOffset(10, 0); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.Gotham; lbl.TextSize = settings.textSize; lbl.TextColor3 = Color3.fromRGB(205, 195, 198); lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Text = options.label or "Color"; lbl.ZIndex = 3; lbl.Parent = header
-        local swatch = Instance.new("Frame"); swatch.Size = UDim2.fromOffset(38, 18); swatch.Position = UDim2.new(1, -48, 0.5, -9); swatch.BackgroundColor3 = current; swatch.BorderSizePixel = 0; swatch.ZIndex = 3; swatch.Parent = header
+        local row = Instance.new("Frame"); row.Size = UDim2.new(1, 0, 0, 30); row.BackgroundColor3 = Color3.fromRGB(36, 30, 32); row.BorderSizePixel = 0; row.ZIndex = 2; row.LayoutOrder = getNextLayoutOrder(); row.Parent = scroll
+        polishRow(row)
+        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
+        local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(1, -70, 1, 0); lbl.Position = UDim2.fromOffset(10, 0); lbl.BackgroundTransparency = 1; lbl.Font = Enum.Font.Gotham; lbl.TextSize = settings.textSize; lbl.TextColor3 = Color3.fromRGB(205, 195, 198); lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Text = options.label or "Color"; lbl.ZIndex = 3; lbl.Parent = row
+        local swatch = Instance.new("TextButton"); swatch.Size = UDim2.fromOffset(38, 18); swatch.Position = UDim2.new(1, -48, 0.5, -9); swatch.BackgroundColor3 = current; swatch.Text = ""; swatch.AutoButtonColor = false; swatch.BorderSizePixel = 0; swatch.ZIndex = 3; swatch.Parent = row
         Instance.new("UICorner", swatch).CornerRadius = UDim.new(0, 6)
         local swatchStroke = Instance.new("UIStroke"); swatchStroke.Color = Color3.fromRGB(196, 48, 79); swatchStroke.Thickness = 1; swatchStroke.Transparency = 0.4; swatchStroke.Parent = swatch
-        local expandBtn = Instance.new("TextButton"); expandBtn.Size = UDim2.new(1, 0, 1, 0); expandBtn.BackgroundTransparency = 1; expandBtn.Text = ""; expandBtn.ZIndex = 5; expandBtn.Parent = header
 
-        local body = Instance.new("Frame"); body.Size = UDim2.new(1, 0, 0, 0); body.Position = UDim2.fromOffset(0, 30); body.BackgroundTransparency = 1; body.ZIndex = 3; body.Parent = outer
+        -- Popup panel: opens as a floating "screen" over the whole UI, like a real color picker
+        local popupLayer = Instance.new("Frame")
+        popupLayer.Name = "ColorPickerLayer"; popupLayer.Size = UDim2.new(1, 0, 1, 0); popupLayer.BackgroundTransparency = 1
+        popupLayer.Visible = false; popupLayer.ZIndex = 200; popupLayer.Parent = UI.mainFrame
 
-        local modeRow = Instance.new("Frame"); modeRow.Size = UDim2.new(1, -20, 0, 20); modeRow.Position = UDim2.fromOffset(10, 4); modeRow.BackgroundTransparency = 1; modeRow.ZIndex = 4; modeRow.Parent = body
-        local modeLayout = Instance.new("UIListLayout"); modeLayout.FillDirection = Enum.FillDirection.Horizontal; modeLayout.Padding = UDim.new(0, 4); modeLayout.Parent = modeRow
+        local popupDim = Instance.new("TextButton")
+        popupDim.Size = UDim2.new(1, 0, 1, 0); popupDim.BackgroundColor3 = Color3.fromRGB(0, 0, 0); popupDim.BackgroundTransparency = 0.35
+        popupDim.Text = ""; popupDim.AutoButtonColor = false; popupDim.ZIndex = 200; popupDim.Parent = popupLayer
 
-        local modeButtons = {}
-        local function styleModeBtn(btn, active)
-            btn.BackgroundColor3 = active and Color3.fromRGB(196, 48, 79) or Color3.fromRGB(48, 40, 42)
-            btn.TextColor3 = active and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(160, 150, 153)
-        end
-        for _, m in ipairs({"RGB", "HSV", "HEX"}) do
-            local b = Instance.new("TextButton"); b.Size = UDim2.fromOffset(46, 20); b.AutoButtonColor = false; b.Font = Enum.Font.GothamBold; b.TextSize = 9; b.Text = m; b.BorderSizePixel = 0; b.ZIndex = 4; b.Parent = modeRow
-            Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
-            styleModeBtn(b, false)
-            modeButtons[m] = b
-        end
+        local panel = Instance.new("Frame")
+        panel.Size = UDim2.fromOffset(210, 250); panel.AnchorPoint = Vector2.new(0.5, 0.5); panel.Position = UDim2.new(0.5, 0, 0.5, 0)
+        panel.BackgroundColor3 = Color3.fromRGB(26, 21, 23); panel.BorderSizePixel = 0; panel.ZIndex = 201; panel.Parent = popupLayer
+        Instance.new("UICorner", panel).CornerRadius = UDim.new(0, 12)
+        local panelStroke = Instance.new("UIStroke"); panelStroke.Color = Color3.fromRGB(196, 48, 79); panelStroke.Thickness = 1.5; panelStroke.Transparency = 0.3; panelStroke.Parent = panel
 
-        local rgbPanel = Instance.new("Frame"); rgbPanel.Size = UDim2.new(1, -20, 0, 68); rgbPanel.Position = UDim2.fromOffset(10, 28); rgbPanel.BackgroundTransparency = 1; rgbPanel.ZIndex = 4; rgbPanel.Parent = body
-        local rgbLayout = Instance.new("UIListLayout"); rgbLayout.Padding = UDim.new(0, 2); rgbLayout.Parent = rgbPanel
+        local panelTitle = Instance.new("TextLabel")
+        panelTitle.Size = UDim2.new(1, -40, 0, 24); panelTitle.Position = UDim2.fromOffset(14, 10); panelTitle.BackgroundTransparency = 1
+        panelTitle.Font = Enum.Font.GothamBold; panelTitle.TextSize = 12; panelTitle.TextColor3 = Color3.fromRGB(220, 210, 213); panelTitle.TextXAlignment = Enum.TextXAlignment.Left
+        panelTitle.Text = options.label or "Color"; panelTitle.ZIndex = 202; panelTitle.Parent = panel
 
-        local hsvPanel = Instance.new("Frame"); hsvPanel.Size = UDim2.new(1, -20, 0, 68); hsvPanel.Position = UDim2.fromOffset(10, 28); hsvPanel.BackgroundTransparency = 1; hsvPanel.Visible = false; hsvPanel.ZIndex = 4; hsvPanel.Parent = body
-        local hsvLayout = Instance.new("UIListLayout"); hsvLayout.Padding = UDim.new(0, 2); hsvLayout.Parent = hsvPanel
+        local closeX = Instance.new("TextButton")
+        closeX.Size = UDim2.fromOffset(22, 22); closeX.Position = UDim2.new(1, -32, 0, 8); closeX.BackgroundTransparency = 1
+        closeX.Font = Enum.Font.GothamBold; closeX.TextSize = 14; closeX.TextColor3 = Color3.fromRGB(160, 150, 153); closeX.Text = "×"; closeX.ZIndex = 202; closeX.Parent = panel
 
-        local hexPanel = Instance.new("Frame"); hexPanel.Size = UDim2.new(1, -20, 0, 26); hexPanel.Position = UDim2.fromOffset(10, 28); hexPanel.BackgroundTransparency = 1; hexPanel.Visible = false; hexPanel.ZIndex = 4; hexPanel.Parent = body
-        local hexBox = Instance.new("TextBox"); hexBox.Size = UDim2.new(1, 0, 0, 24); hexBox.BackgroundColor3 = Color3.fromRGB(26, 21, 23); hexBox.BorderSizePixel = 0; hexBox.Font = Enum.Font.GothamBold; hexBox.TextSize = 11; hexBox.TextColor3 = Color3.fromRGB(220, 210, 213); hexBox.PlaceholderText = "#RRGGBB"; hexBox.ClearTextOnFocus = false; hexBox.Text = colorToHex(current); hexBox.ZIndex = 4; hexBox.Parent = hexPanel
+        -- SV square: hue-tinted background, white->transparent gradient, transparent->black gradient
+        local svSquare = Instance.new("Frame")
+        svSquare.Size = UDim2.fromOffset(182, 130); svSquare.Position = UDim2.fromOffset(14, 40)
+        svSquare.BackgroundColor3 = Color3.fromRGB(255, 0, 0); svSquare.BorderSizePixel = 0; svSquare.ClipsDescendants = true
+        svSquare.ZIndex = 202; svSquare.Parent = panel
+        Instance.new("UICorner", svSquare).CornerRadius = UDim.new(0, 8)
+
+        local svWhite = Instance.new("Frame")
+        svWhite.Size = UDim2.new(1, 0, 1, 0); svWhite.BackgroundColor3 = Color3.new(1, 1, 1); svWhite.BorderSizePixel = 0; svWhite.ZIndex = 203; svWhite.Parent = svSquare
+        local svWhiteGrad = Instance.new("UIGradient")
+        svWhiteGrad.Color = ColorSequence.new(Color3.new(1, 1, 1))
+        svWhiteGrad.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1)})
+        svWhiteGrad.Parent = svWhite
+
+        local svBlack = Instance.new("Frame")
+        svBlack.Size = UDim2.new(1, 0, 1, 0); svBlack.BackgroundColor3 = Color3.new(0, 0, 0); svBlack.BorderSizePixel = 0; svBlack.ZIndex = 204; svBlack.Parent = svSquare
+        local svBlackGrad = Instance.new("UIGradient")
+        svBlackGrad.Color = ColorSequence.new(Color3.new(0, 0, 0))
+        svBlackGrad.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 0)})
+        svBlackGrad.Rotation = 90
+        svBlackGrad.Parent = svBlack
+
+        local svCursor = Instance.new("Frame")
+        svCursor.Size = UDim2.fromOffset(12, 12); svCursor.AnchorPoint = Vector2.new(0.5, 0.5); svCursor.BackgroundColor3 = Color3.new(1, 1, 1)
+        svCursor.BorderSizePixel = 0; svCursor.ZIndex = 206; svCursor.Parent = svSquare
+        Instance.new("UICorner", svCursor).CornerRadius = UDim.new(1, 0)
+        local svCursorStroke = Instance.new("UIStroke"); svCursorStroke.Color = Color3.fromRGB(20, 17, 18); svCursorStroke.Thickness = 2; svCursorStroke.Parent = svCursor
+
+        -- Hue strip: full rainbow gradient
+        local hueBar = Instance.new("Frame")
+        hueBar.Size = UDim2.fromOffset(182, 16); hueBar.Position = UDim2.fromOffset(14, 178)
+        hueBar.BackgroundColor3 = Color3.new(1, 1, 1); hueBar.BorderSizePixel = 0; hueBar.ZIndex = 202; hueBar.Parent = panel
+        Instance.new("UICorner", hueBar).CornerRadius = UDim.new(0, 8)
+        local hueGrad = Instance.new("UIGradient")
+        hueGrad.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0/6, Color3.fromHSV(0/6, 1, 1)),
+            ColorSequenceKeypoint.new(1/6, Color3.fromHSV(1/6, 1, 1)),
+            ColorSequenceKeypoint.new(2/6, Color3.fromHSV(2/6, 1, 1)),
+            ColorSequenceKeypoint.new(3/6, Color3.fromHSV(3/6, 1, 1)),
+            ColorSequenceKeypoint.new(4/6, Color3.fromHSV(4/6, 1, 1)),
+            ColorSequenceKeypoint.new(5/6, Color3.fromHSV(5/6, 1, 1)),
+            ColorSequenceKeypoint.new(1, Color3.fromHSV(1, 1, 1)),
+        })
+        hueGrad.Parent = hueBar
+
+        local hueCursor = Instance.new("Frame")
+        hueCursor.Size = UDim2.fromOffset(6, 22); hueCursor.AnchorPoint = Vector2.new(0.5, 0.5); hueCursor.Position = UDim2.new(0, 0, 0.5, 0)
+        hueCursor.BackgroundColor3 = Color3.new(1, 1, 1); hueCursor.BorderSizePixel = 0; hueCursor.ZIndex = 206; hueCursor.Parent = hueBar
+        Instance.new("UICorner", hueCursor).CornerRadius = UDim.new(0, 3)
+        local hueCursorStroke = Instance.new("UIStroke"); hueCursorStroke.Color = Color3.fromRGB(20, 17, 18); hueCursorStroke.Thickness = 1.5; hueCursorStroke.Parent = hueCursor
+
+        -- Hex input + live preview swatch
+        local hexBox = Instance.new("TextBox")
+        hexBox.Size = UDim2.fromOffset(134, 26); hexBox.Position = UDim2.fromOffset(14, 206); hexBox.BackgroundColor3 = Color3.fromRGB(36, 30, 32)
+        hexBox.BorderSizePixel = 0; hexBox.Font = Enum.Font.GothamBold; hexBox.TextSize = 11; hexBox.TextColor3 = Color3.fromRGB(220, 210, 213)
+        hexBox.PlaceholderText = "#RRGGBB"; hexBox.ClearTextOnFocus = false; hexBox.Text = colorToHex(current); hexBox.ZIndex = 202; hexBox.Parent = panel
         Instance.new("UICorner", hexBox).CornerRadius = UDim.new(0, 6)
         local hexPad = Instance.new("UIPadding"); hexPad.PaddingLeft = UDim.new(0, 8); hexPad.Parent = hexBox
 
-        local function panelHeight() return mode == "HEX" and 26 or 68 end
-        local function updateHeight(animate)
-            local bodyH = 28 + panelHeight() + 6
-            local total = expanded and (30 + bodyH) or 30
-            body.Size = UDim2.new(1, 0, 0, bodyH)
-            if animate then TweenService:Create(outer, TweenInfo.new(0.22, Enum.EasingStyle.Quint), {Size = UDim2.new(1, 0, 0, total)}):Play()
-            else outer.Size = UDim2.new(1, 0, 0, total) end
-        end
+        local previewSwatch = Instance.new("Frame")
+        previewSwatch.Size = UDim2.fromOffset(34, 26); previewSwatch.Position = UDim2.fromOffset(154, 206); previewSwatch.BackgroundColor3 = current
+        previewSwatch.BorderSizePixel = 0; previewSwatch.ZIndex = 202; previewSwatch.Parent = panel
+        Instance.new("UICorner", previewSwatch).CornerRadius = UDim.new(0, 6)
+        local previewStroke = Instance.new("UIStroke"); previewStroke.Color = Color3.fromRGB(255, 255, 255); previewStroke.Thickness = 1; previewStroke.Transparency = 0.8; previewStroke.Parent = previewSwatch
 
-        local rComp, gComp, bComp, hComp, sComp, vComp
+        local hue0, sat0, val0 = current:ToHSV()
+        local hue, sat, val = hue0, sat0, val0
+        local updatingHex = false
+
+        local function refreshVisuals()
+            svSquare.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
+            svCursor.Position = UDim2.new(sat, 0, 1 - val, 0)
+            hueCursor.Position = UDim2.new(hue, 0, 0.5, 0)
+        end
 
         local function setColor(c, fire)
             current = c
+            hue, sat, val = c:ToHSV()
             swatch.BackgroundColor3 = c
-            if not updating then
-                updating = true
-                rComp.apply(math.floor(c.R*255+0.5), false); gComp.apply(math.floor(c.G*255+0.5), false); bComp.apply(math.floor(c.B*255+0.5), false)
-                local h, s, v = c:ToHSV()
-                hComp.apply(math.floor(h*360+0.5), false); sComp.apply(math.floor(s*100+0.5), false); vComp.apply(math.floor(v*100+0.5), false)
+            previewSwatch.BackgroundColor3 = c
+            refreshVisuals()
+            if not updatingHex then
                 hexBox.Text = colorToHex(c)
-                updating = false
             end
             if fire and options.onChange then options.onChange(c) end
         end
 
-        rComp = miniSlider(rgbPanel, "R", 0, 255, 1, math.floor(current.R*255+0.5), function(v) if not updating then setColor(Color3.fromRGB(v, current.G*255, current.B*255), true) end end)
-        gComp = miniSlider(rgbPanel, "G", 0, 255, 1, math.floor(current.G*255+0.5), function(v) if not updating then setColor(Color3.fromRGB(current.R*255, v, current.B*255), true) end end)
-        bComp = miniSlider(rgbPanel, "B", 0, 255, 1, math.floor(current.B*255+0.5), function(v) if not updating then setColor(Color3.fromRGB(current.R*255, current.G*255, v), true) end end)
+        local function fromHSV(fire)
+            setColor(Color3.fromHSV(hue, sat, val), fire)
+        end
 
-        local h0, s0, v0 = current:ToHSV()
-        hComp = miniSlider(hsvPanel, "H", 0, 360, 1, math.floor(h0*360+0.5), function(v)
-            if updating then return end
-            local _, s, val = current:ToHSV(); setColor(Color3.fromHSV(v/360, s, val), true)
-        end)
-        sComp = miniSlider(hsvPanel, "S", 0, 100, 1, math.floor(s0*100+0.5), function(v)
-            if updating then return end
-            local hh, _, val = current:ToHSV(); setColor(Color3.fromHSV(hh, v/100, val), true)
-        end)
-        vComp = miniSlider(hsvPanel, "V", 0, 100, 1, math.floor(v0*100+0.5), function(v)
-            if updating then return end
-            local hh, s, _ = current:ToHSV(); setColor(Color3.fromHSV(hh, s, v/100), true)
-        end)
+        refreshVisuals()
+
+        local function pointerInput(i)
+            return i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch
+        end
+        local function moveInput(i)
+            return i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch
+        end
+
+        local draggingSV = false
+        local function svFromPos(pos)
+            local ap, as = svSquare.AbsolutePosition, svSquare.AbsoluteSize
+            sat = math.clamp((pos.X - ap.X) / as.X, 0, 1)
+            val = 1 - math.clamp((pos.Y - ap.Y) / as.Y, 0, 1)
+            fromHSV(true)
+        end
+        svSquare.InputBegan:Connect(function(i) if pointerInput(i) then draggingSV = true; svFromPos(i.Position) end end)
+        UserInputService.InputEnded:Connect(function(i) if pointerInput(i) then draggingSV = false end end)
+        UserInputService.InputChanged:Connect(function(i) if draggingSV and moveInput(i) then svFromPos(i.Position) end end)
+
+        local draggingHue = false
+        local function hueFromPos(pos)
+            local ap, as = hueBar.AbsolutePosition, hueBar.AbsoluteSize
+            hue = math.clamp((pos.X - ap.X) / as.X, 0, 1)
+            fromHSV(true)
+        end
+        hueBar.InputBegan:Connect(function(i) if pointerInput(i) then draggingHue = true; hueFromPos(i.Position) end end)
+        UserInputService.InputEnded:Connect(function(i) if pointerInput(i) then draggingHue = false end end)
+        UserInputService.InputChanged:Connect(function(i) if draggingHue and moveInput(i) then hueFromPos(i.Position) end end)
 
         hexBox.FocusLost:Connect(function()
+            updatingHex = true
             local c = hexToColor(hexBox.Text)
             if c then setColor(c, true) else hexBox.Text = colorToHex(current) end
+            updatingHex = false
         end)
 
-        local function setMode(m)
-            mode = m
-            for name, btn in pairs(modeButtons) do styleModeBtn(btn, name == m) end
-            rgbPanel.Visible = m == "RGB"; hsvPanel.Visible = m == "HSV"; hexPanel.Visible = m == "HEX"
-            updateHeight(expanded)
+        local function openPopup()
+            popupLayer.Visible = true
+            popupDim.BackgroundTransparency = 1
+            panel.Size = UDim2.fromOffset(190, 230)
+            TweenService:Create(popupDim, TweenInfo.new(0.15), {BackgroundTransparency = 0.35}):Play()
+            TweenService:Create(panel, TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(210, 250)}):Play()
         end
-        for _, m in ipairs({"RGB", "HSV", "HEX"}) do modeButtons[m].MouseButton1Click:Connect(function() setMode(m) end) end
-        setMode("RGB")
-
-        expandBtn.MouseButton1Click:Connect(function() expanded = not expanded; updateHeight(true) end)
+        local function closePopup()
+            TweenService:Create(popupDim, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
+            local tw = TweenService:Create(panel, TweenInfo.new(0.15), {Size = UDim2.fromOffset(190, 230)})
+            tw:Play()
+            tw.Completed:Connect(function() popupLayer.Visible = false end)
+        end
+        swatch.MouseButton1Click:Connect(openPopup)
+        popupDim.MouseButton1Click:Connect(closePopup)
+        closeX.MouseButton1Click:Connect(closePopup)
 
         registerControl(options.id, options.default or current, function() return colorToHex(current) end, function(v, silent)
             local c = current
@@ -1137,7 +1226,7 @@ local function createTab(tabName, isSettings)
             if not silent and options.onChange then options.onChange(c) end
         end)
 
-        return {row = outer, setColor = setColor, getColor = function() return current end}
+        return {row = row, setColor = setColor, getColor = function() return current end}
     end
 
     api = {AddToggle = addToggle, AddButton = addButton, AddSlider = addSlider, AddToggleSlider = addToggleSlider, AddDropdown = addDropdown, AddSection = addSection, AddKeybind = addKeybind, AddText = addText, AddColorPicker = addColorPicker, Container = scroll, getNextLayoutOrder = getNextLayoutOrder}
@@ -1303,6 +1392,9 @@ end
 
 local settingsTab = createTab("Settings", true)
 buildSettingsTab(settingsTab)
+if Tabs["Settings"] and Tabs["Settings"].button then
+    Tabs["Settings"].button.Visible = false
+end
 
 if settings.autoLoad and FS.isfile(configPath(currentConfigName)) then loadConfig(currentConfigName)
 else updateStatus("Ready. Configs: " .. table.concat(listConfigs(), ", ")) end
