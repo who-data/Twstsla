@@ -1,4 +1,4 @@
-
+-- Config Manager UI (Executor-ready) — Dark/Wine theme
 if getgenv().HoneyLuaLoaded then return end
 getgenv().HoneyLuaLoaded = true
 
@@ -58,7 +58,6 @@ local DEFAULT_SETTINGS = {
     uiWidth = 560, uiHeight = 400, textSize = 11,
     transparent = false, animatedBg = true, openKey = "RightControl", showMobileBtn = true,
     compactMode = false, notifications = true,
-    accentColor = "B2223C", uiScale = 1, transparencyAmount = 0.4,
     defaultConfigs = {}, floatingButtons = {}
 }
 
@@ -132,15 +131,6 @@ local function hexToColor(hex)
 end
 local function rgbToHSV(c) return c:ToHSV() end
 
-local function deriveAccentShades(hex)
-    local base = hexToColor(hex) or Color3.fromRGB(178, 34, 60)
-    local h, s, v = base:ToHSV()
-    local light = Color3.fromHSV(h, math.max(0, s - 0.18), math.min(1, v + 0.25))
-    local dim = Color3.fromHSV(h, math.min(1, s + 0.05), math.max(0, v - 0.35))
-    return base, light, dim
-end
-THEME.accent, THEME.accentLight, THEME.accentDim = deriveAccentShades(settings.accentColor)
-
 ----------------------------------------------------------------
 -- GLOBALS
 ----------------------------------------------------------------
@@ -166,9 +156,8 @@ end
 
 local function applyTransparency(on)
     if not UI.mainFrame then return end
-    local amt = settings.transparencyAmount or 0.4
-    local t1 = on and amt or 0
-    local t2 = on and (amt * 0.75) or 0
+    local t1 = on and 0.4 or 0
+    local t2 = on and 0.3 or 0
     TweenService:Create(UI.mainFrame, TweenInfo.new(0.3), {BackgroundTransparency = t1}):Play()
     if UI.sidebar then TweenService:Create(UI.sidebar, TweenInfo.new(0.3), {BackgroundTransparency = t2}):Play() end
     if UI.sideClip then TweenService:Create(UI.sideClip, TweenInfo.new(0.3), {BackgroundTransparency = t2}):Play() end
@@ -366,13 +355,7 @@ local function buildUI()
     main.BorderSizePixel = 0; main.Parent = screenGui
 
     local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 16); corner.Parent = main
-    local bgGrad = Instance.new("UIGradient")
-    bgGrad.Rotation = 90
-    bgGrad.Color = ColorSequence.new(Color3.fromRGB(THEME.bg.R * 255 + 5, THEME.bg.G * 255 + 4, THEME.bg.B * 255 + 4), THEME.bg)
-    bgGrad.Parent = main
-    local stroke = Instance.new("UIStroke"); stroke.Color = THEME.accent; stroke.Thickness = 1.5; stroke.Transparency = 1; stroke.Parent = main
-    local strokeGrad = Instance.new("UIGradient"); strokeGrad.Rotation = 45; strokeGrad.Color = ColorSequence.new(THEME.accentLight, THEME.accentDim); strokeGrad.Parent = stroke
-    local uiScale = Instance.new("UIScale"); uiScale.Scale = settings.uiScale or 1; uiScale.Parent = main
+    local stroke = Instance.new("UIStroke"); stroke.Color = THEME.accent; stroke.Thickness = 2; stroke.Transparency = 1; stroke.Parent = main
 
     createAnimatedBackground(main)
 
@@ -380,9 +363,6 @@ local function buildUI()
     sidebar.Name = "TopBar"; sidebar.Size = UDim2.new(1, 0, 0, 76); sidebar.Position = UDim2.fromOffset(0, 0)
     sidebar.BackgroundColor3 = THEME.sidebar; sidebar.BackgroundTransparency = settings.transparent and 0.2 or 0
     sidebar.BorderSizePixel = 0; sidebar.ZIndex = 2; sidebar.Parent = main
-    local topGrad = Instance.new("UIGradient"); topGrad.Rotation = 90
-    topGrad.Color = ColorSequence.new(Color3.fromRGB(THEME.sidebar.R * 255 + 6, THEME.sidebar.G * 255 + 5, THEME.sidebar.B * 255 + 5), THEME.sidebar)
-    topGrad.Parent = sidebar
 
     local sideCorner = Instance.new("UICorner"); sideCorner.CornerRadius = UDim.new(0, 14); sideCorner.Parent = sidebar
     -- square off the bottom corners of the top bar (only the top should be rounded)
@@ -417,9 +397,6 @@ local function buildUI()
     contentArea.Name = "ContentArea"; contentArea.Size = UDim2.new(1, -10, 1, -84); contentArea.Position = UDim2.fromOffset(5, 79)
     contentArea.BackgroundColor3 = THEME.content; contentArea.BackgroundTransparency = settings.transparent and 0.15 or 0
     contentArea.BorderSizePixel = 0; contentArea.ZIndex = 2; contentArea.Parent = main
-    local contentGrad = Instance.new("UIGradient"); contentGrad.Rotation = 90
-    contentGrad.Color = ColorSequence.new(Color3.fromRGB(THEME.content.R * 255 + 3, THEME.content.G * 255 + 2, THEME.content.B * 255 + 2), THEME.content)
-    contentGrad.Parent = contentArea
 
     local contentCorner = Instance.new("UICorner"); contentCorner.CornerRadius = UDim.new(0, 10); contentCorner.Parent = contentArea
 
@@ -463,30 +440,19 @@ local function buildUI()
 
     screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
 
-    -- Close button (unload) — ghost style, only turns red on hover
+    -- Close button (unload)
     local closeBtn = Instance.new("TextButton")
-    closeBtn.Size = UDim2.fromOffset(22, 22); closeBtn.Position = UDim2.new(1, -30, 0, 8)
-    closeBtn.BackgroundColor3 = THEME.field; closeBtn.BackgroundTransparency = 0.3; closeBtn.Text = ""
-    closeBtn.AutoButtonColor = false; closeBtn.ZIndex = 11; closeBtn.Parent = sidebar
-    Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(1, 0)
+    closeBtn.Size = UDim2.fromOffset(24, 24); closeBtn.Position = UDim2.new(1, -30, 0, 6)
+    closeBtn.BackgroundColor3 = THEME.danger; closeBtn.Text = ""
+    closeBtn.AutoButtonColor = false; closeBtn.ZIndex = 11; closeBtn.Parent = main
+    Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
 
     local cross1 = Instance.new("Frame")
-    cross1.Size = UDim2.new(0, 10, 0, 1.5); cross1.Position = UDim2.new(0.5, 0, 0.5, 0)
+    cross1.Size = UDim2.new(0, 14, 0, 2); cross1.Position = UDim2.new(0.5, 0, 0.5, 0)
     cross1.AnchorPoint = Vector2.new(0.5, 0.5); cross1.Rotation = 45
-    cross1.BackgroundColor3 = THEME.textDim; cross1.BorderSizePixel = 0
+    cross1.BackgroundColor3 = Color3.new(1, 1, 1); cross1.BorderSizePixel = 0
     cross1.ZIndex = 12; cross1.Parent = closeBtn
     local cross2 = cross1:Clone(); cross2.Rotation = -45; cross2.Parent = closeBtn
-
-    closeBtn.MouseEnter:Connect(function()
-        TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = THEME.danger, BackgroundTransparency = 0}):Play()
-        TweenService:Create(cross1, TweenInfo.new(0.15), {BackgroundColor3 = Color3.new(1, 1, 1)}):Play()
-        TweenService:Create(cross2, TweenInfo.new(0.15), {BackgroundColor3 = Color3.new(1, 1, 1)}):Play()
-    end)
-    closeBtn.MouseLeave:Connect(function()
-        TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = THEME.field, BackgroundTransparency = 0.3}):Play()
-        TweenService:Create(cross1, TweenInfo.new(0.15), {BackgroundColor3 = THEME.textDim}):Play()
-        TweenService:Create(cross2, TweenInfo.new(0.15), {BackgroundColor3 = THEME.textDim}):Play()
-    end)
 
     -- Mobile toggle / minimize button (square on mobile, round on desktop)
     local mobileBtnSize = isMobileDevice and 48 or 45
@@ -561,23 +527,10 @@ local function buildUI()
     promptNo.TextSize = 12; promptNo.TextColor3 = THEME.textDim; promptNo.ZIndex = 102; promptNo.Parent = promptBox
     Instance.new("UICorner", promptNo).CornerRadius = UDim.new(0, 6)
 
-    return {screenGui = screenGui, mainFrame = main, mainStroke = stroke, mainStrokeGrad = strokeGrad, uiScale = uiScale, statusLabel = status, sectionLabel = sepLabel, tabsHolder = tabsHolder, tabContent = tabContent, resizeHandle = resizeHandle, sidebar = sidebar, contentArea = contentArea, sideClip = sideClip, logoDot = logoDot, mobileBtn = mobileBtn, mobileBtnStroke = mobileBtnStroke, closeBtn = closeBtn, promptOverlay = promptOverlay, promptText = promptText, promptYes = promptYes, promptNo = promptNo}
+    return {screenGui = screenGui, mainFrame = main, mainStroke = stroke, statusLabel = status, sectionLabel = sepLabel, tabsHolder = tabsHolder, tabContent = tabContent, resizeHandle = resizeHandle, sidebar = sidebar, contentArea = contentArea, sideClip = sideClip, mobileBtn = mobileBtn, closeBtn = closeBtn, promptOverlay = promptOverlay, promptText = promptText, promptYes = promptYes, promptNo = promptNo}
 end
 
 UI = buildUI()
-
-local function applyAccentColor(hex)
-    settings.accentColor = hex
-    THEME.accent, THEME.accentLight, THEME.accentDim = deriveAccentShades(hex)
-    writeSettings(settings)
-    if UI.mainStrokeGrad then UI.mainStrokeGrad.Color = ColorSequence.new(THEME.accentLight, THEME.accentDim) end
-    if UI.sideClip then UI.sideClip.BackgroundColor3 = THEME.accent end
-    if UI.logoDot then UI.logoDot.BackgroundColor3 = THEME.accentLight end
-    if UI.mobileBtnStroke then UI.mobileBtnStroke.Color = THEME.accent end
-    if UI.mobileBtn then UI.mobileBtn.TextColor3 = THEME.accentLight end
-    if ActiveTab then setTabActive(ActiveTab) end
-    notify("Tema atualizado", "Cor de destaque alterada. Componentes novos já usam a cor nova; reabra a UI para retintar tudo.", 3.5)
-end
 
 local function showPrompt(text, onYes, onNo)
     UI.promptText.Text = text; UI.promptOverlay.Visible = true
@@ -1862,36 +1815,6 @@ local function buildSettingsTab(tabApi)
 
     tabApi.AddSection("Visuals")
 
-    tabApi.AddColorPicker({
-        id = "theme_accent_color", label = "Cor de Destaque", default = hexToColor(settings.accentColor),
-        onChange = function(c) applyAccentColor(colorToHex(c)) end
-    })
-    tabApi.AddSlider({
-        id = "ui_scale_slider", label = "Escala da UI", min = 80, max = 130, step = 5, default = math.floor((settings.uiScale or 1) * 100),
-        onChange = function(v)
-            settings.uiScale = v / 100
-            if UI.uiScale then TweenService:Create(UI.uiScale, TweenInfo.new(0.12), {Scale = v / 100}):Play() end
-            writeSettings(settings)
-        end
-    })
-    tabApi.AddSlider({
-        id = "blur_intensity_slider", label = "Intensidade do Blur", min = 10, max = 70, step = 5, default = math.floor((settings.transparencyAmount or 0.4) * 100),
-        onChange = function(v)
-            settings.transparencyAmount = v / 100
-            writeSettings(settings)
-            if settings.transparent then applyTransparency(true) end
-        end
-    })
-    tabApi.AddButton({
-        id = "reset_theme_btn", label = "Resetar Tema",
-        onClick = function()
-            applyAccentColor("B2223C")
-            settings.uiScale = 1
-            if UI.uiScale then TweenService:Create(UI.uiScale, TweenInfo.new(0.15), {Scale = 1}):Play() end
-            writeSettings(settings)
-            notify("Tema resetado", "Cor e escala voltaram ao padrão.", 2.5)
-        end
-    })
     tabApi.AddToggle({
         id = "acrylic_transparency", label = "Acrylic / Transparency", default = settings.transparent,
         onChange = function(v)
