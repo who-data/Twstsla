@@ -1,4 +1,4 @@
--- Config Ma
+
 if getgenv().HoneyLuaLoaded then return end
 getgenv().HoneyLuaLoaded = true
 
@@ -7,6 +7,7 @@ local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
 
 local localPlayer = Players.LocalPlayer
 local gameId = tostring(game.PlaceId)
@@ -29,11 +30,35 @@ if not FS.isfolder(ROOT_FOLDER) then FS.makefolder(ROOT_FOLDER) end
 if not FS.isfolder(GAMES_FOLDER) then FS.makefolder(GAMES_FOLDER) end
 if not FS.isfolder(CONFIG_FOLDER) then FS.makefolder(CONFIG_FOLDER) end
 
+local mediaCache = {}
+local function resolveMediaAsset(src, kind)
+    if not src or src == "" then return nil end
+    if string.match(src, "^rbxassetid://") or string.match(src, "^rbxasset://") or string.match(src, "^%d+$") then
+        return string.match(src, "^%d+$") and ("rbxassetid://" .. src) or src
+    end
+    if mediaCache[src] ~= nil then return mediaCache[src] or nil end
+    local resolved
+    local ok = pcall(function()
+        if type(getcustomasset) ~= "function" then error("no getcustomasset") end
+        local cacheFolder = ROOT_FOLDER .. "/cache"
+        if not FS.isfolder(cacheFolder) then FS.makefolder(cacheFolder) end
+        local ext = (kind == "image" and "png") or (kind == "audio" and "mp3") or "mp4"
+        local safeName = string.gsub(HttpService:GenerateGUID(false), "[{}]", "")
+        local path = cacheFolder .. "/" .. safeName .. "." .. ext
+        local data = game.HttpGet and game:HttpGet(src) or HttpService:GetAsync(src)
+        FS.writefile(path, data)
+        resolved = getcustomasset(path)
+    end)
+    mediaCache[src] = ok and resolved or false
+    return resolved
+end
+
 local DEFAULT_SETTINGS = {
     autoLoad = true, autoSave = true, autoSaveInterval = 30,
     uiWidth = 560, uiHeight = 400, textSize = 11,
     transparent = false, animatedBg = true, openKey = "RightControl", showMobileBtn = true,
     compactMode = false, notifications = true,
+    accentColor = "B2223C", uiScale = 1, transparencyAmount = 0.4,
     defaultConfigs = {}, floatingButtons = {}
 }
 
@@ -107,6 +132,15 @@ local function hexToColor(hex)
 end
 local function rgbToHSV(c) return c:ToHSV() end
 
+local function deriveAccentShades(hex)
+    local base = hexToColor(hex) or Color3.fromRGB(178, 34, 60)
+    local h, s, v = base:ToHSV()
+    local light = Color3.fromHSV(h, math.max(0, s - 0.18), math.min(1, v + 0.25))
+    local dim = Color3.fromHSV(h, math.min(1, s + 0.05), math.max(0, v - 0.35))
+    return base, light, dim
+end
+THEME.accent, THEME.accentLight, THEME.accentDim = deriveAccentShades(settings.accentColor)
+
 ----------------------------------------------------------------
 -- GLOBALS
 ----------------------------------------------------------------
@@ -132,8 +166,9 @@ end
 
 local function applyTransparency(on)
     if not UI.mainFrame then return end
-    local t1 = on and 0.4 or 0
-    local t2 = on and 0.3 or 0
+    local amt = settings.transparencyAmount or 0.4
+    local t1 = on and amt or 0
+    local t2 = on and (amt * 0.75) or 0
     TweenService:Create(UI.mainFrame, TweenInfo.new(0.3), {BackgroundTransparency = t1}):Play()
     if UI.sidebar then TweenService:Create(UI.sidebar, TweenInfo.new(0.3), {BackgroundTransparency = t2}):Play() end
     if UI.sideClip then TweenService:Create(UI.sideClip, TweenInfo.new(0.3), {BackgroundTransparency = t2}):Play() end
@@ -331,7 +366,13 @@ local function buildUI()
     main.BorderSizePixel = 0; main.Parent = screenGui
 
     local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 16); corner.Parent = main
-    local stroke = Instance.new("UIStroke"); stroke.Color = THEME.accent; stroke.Thickness = 2; stroke.Transparency = 1; stroke.Parent = main
+    local bgGrad = Instance.new("UIGradient")
+    bgGrad.Rotation = 90
+    bgGrad.Color = ColorSequence.new(Color3.fromRGB(THEME.bg.R * 255 + 5, THEME.bg.G * 255 + 4, THEME.bg.B * 255 + 4), THEME.bg)
+    bgGrad.Parent = main
+    local stroke = Instance.new("UIStroke"); stroke.Color = THEME.accent; stroke.Thickness = 1.5; stroke.Transparency = 1; stroke.Parent = main
+    local strokeGrad = Instance.new("UIGradient"); strokeGrad.Rotation = 45; strokeGrad.Color = ColorSequence.new(THEME.accentLight, THEME.accentDim); strokeGrad.Parent = stroke
+    local uiScale = Instance.new("UIScale"); uiScale.Scale = settings.uiScale or 1; uiScale.Parent = main
 
     createAnimatedBackground(main)
 
@@ -339,6 +380,9 @@ local function buildUI()
     sidebar.Name = "TopBar"; sidebar.Size = UDim2.new(1, 0, 0, 76); sidebar.Position = UDim2.fromOffset(0, 0)
     sidebar.BackgroundColor3 = THEME.sidebar; sidebar.BackgroundTransparency = settings.transparent and 0.2 or 0
     sidebar.BorderSizePixel = 0; sidebar.ZIndex = 2; sidebar.Parent = main
+    local topGrad = Instance.new("UIGradient"); topGrad.Rotation = 90
+    topGrad.Color = ColorSequence.new(Color3.fromRGB(THEME.sidebar.R * 255 + 6, THEME.sidebar.G * 255 + 5, THEME.sidebar.B * 255 + 5), THEME.sidebar)
+    topGrad.Parent = sidebar
 
     local sideCorner = Instance.new("UICorner"); sideCorner.CornerRadius = UDim.new(0, 14); sideCorner.Parent = sidebar
     -- square off the bottom corners of the top bar (only the top should be rounded)
@@ -373,6 +417,9 @@ local function buildUI()
     contentArea.Name = "ContentArea"; contentArea.Size = UDim2.new(1, -10, 1, -84); contentArea.Position = UDim2.fromOffset(5, 79)
     contentArea.BackgroundColor3 = THEME.content; contentArea.BackgroundTransparency = settings.transparent and 0.15 or 0
     contentArea.BorderSizePixel = 0; contentArea.ZIndex = 2; contentArea.Parent = main
+    local contentGrad = Instance.new("UIGradient"); contentGrad.Rotation = 90
+    contentGrad.Color = ColorSequence.new(Color3.fromRGB(THEME.content.R * 255 + 3, THEME.content.G * 255 + 2, THEME.content.B * 255 + 2), THEME.content)
+    contentGrad.Parent = contentArea
 
     local contentCorner = Instance.new("UICorner"); contentCorner.CornerRadius = UDim.new(0, 10); contentCorner.Parent = contentArea
 
@@ -416,19 +463,30 @@ local function buildUI()
 
     screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
 
-    -- Close button (unload)
+    -- Close button (unload) — ghost style, only turns red on hover
     local closeBtn = Instance.new("TextButton")
-    closeBtn.Size = UDim2.fromOffset(24, 24); closeBtn.Position = UDim2.new(1, -30, 0, 6)
-    closeBtn.BackgroundColor3 = THEME.danger; closeBtn.Text = ""
-    closeBtn.AutoButtonColor = false; closeBtn.ZIndex = 11; closeBtn.Parent = main
-    Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
+    closeBtn.Size = UDim2.fromOffset(22, 22); closeBtn.Position = UDim2.new(1, -30, 0, 8)
+    closeBtn.BackgroundColor3 = THEME.field; closeBtn.BackgroundTransparency = 0.3; closeBtn.Text = ""
+    closeBtn.AutoButtonColor = false; closeBtn.ZIndex = 11; closeBtn.Parent = sidebar
+    Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(1, 0)
 
     local cross1 = Instance.new("Frame")
-    cross1.Size = UDim2.new(0, 14, 0, 2); cross1.Position = UDim2.new(0.5, 0, 0.5, 0)
+    cross1.Size = UDim2.new(0, 10, 0, 1.5); cross1.Position = UDim2.new(0.5, 0, 0.5, 0)
     cross1.AnchorPoint = Vector2.new(0.5, 0.5); cross1.Rotation = 45
-    cross1.BackgroundColor3 = Color3.new(1, 1, 1); cross1.BorderSizePixel = 0
+    cross1.BackgroundColor3 = THEME.textDim; cross1.BorderSizePixel = 0
     cross1.ZIndex = 12; cross1.Parent = closeBtn
     local cross2 = cross1:Clone(); cross2.Rotation = -45; cross2.Parent = closeBtn
+
+    closeBtn.MouseEnter:Connect(function()
+        TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = THEME.danger, BackgroundTransparency = 0}):Play()
+        TweenService:Create(cross1, TweenInfo.new(0.15), {BackgroundColor3 = Color3.new(1, 1, 1)}):Play()
+        TweenService:Create(cross2, TweenInfo.new(0.15), {BackgroundColor3 = Color3.new(1, 1, 1)}):Play()
+    end)
+    closeBtn.MouseLeave:Connect(function()
+        TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = THEME.field, BackgroundTransparency = 0.3}):Play()
+        TweenService:Create(cross1, TweenInfo.new(0.15), {BackgroundColor3 = THEME.textDim}):Play()
+        TweenService:Create(cross2, TweenInfo.new(0.15), {BackgroundColor3 = THEME.textDim}):Play()
+    end)
 
     -- Mobile toggle / minimize button (square on mobile, round on desktop)
     local mobileBtnSize = isMobileDevice and 48 or 45
@@ -503,10 +561,23 @@ local function buildUI()
     promptNo.TextSize = 12; promptNo.TextColor3 = THEME.textDim; promptNo.ZIndex = 102; promptNo.Parent = promptBox
     Instance.new("UICorner", promptNo).CornerRadius = UDim.new(0, 6)
 
-    return {screenGui = screenGui, mainFrame = main, mainStroke = stroke, statusLabel = status, sectionLabel = sepLabel, tabsHolder = tabsHolder, tabContent = tabContent, resizeHandle = resizeHandle, sidebar = sidebar, contentArea = contentArea, sideClip = sideClip, mobileBtn = mobileBtn, closeBtn = closeBtn, promptOverlay = promptOverlay, promptText = promptText, promptYes = promptYes, promptNo = promptNo}
+    return {screenGui = screenGui, mainFrame = main, mainStroke = stroke, mainStrokeGrad = strokeGrad, uiScale = uiScale, statusLabel = status, sectionLabel = sepLabel, tabsHolder = tabsHolder, tabContent = tabContent, resizeHandle = resizeHandle, sidebar = sidebar, contentArea = contentArea, sideClip = sideClip, logoDot = logoDot, mobileBtn = mobileBtn, mobileBtnStroke = mobileBtnStroke, closeBtn = closeBtn, promptOverlay = promptOverlay, promptText = promptText, promptYes = promptYes, promptNo = promptNo}
 end
 
 UI = buildUI()
+
+local function applyAccentColor(hex)
+    settings.accentColor = hex
+    THEME.accent, THEME.accentLight, THEME.accentDim = deriveAccentShades(hex)
+    writeSettings(settings)
+    if UI.mainStrokeGrad then UI.mainStrokeGrad.Color = ColorSequence.new(THEME.accentLight, THEME.accentDim) end
+    if UI.sideClip then UI.sideClip.BackgroundColor3 = THEME.accent end
+    if UI.logoDot then UI.logoDot.BackgroundColor3 = THEME.accentLight end
+    if UI.mobileBtnStroke then UI.mobileBtnStroke.Color = THEME.accent end
+    if UI.mobileBtn then UI.mobileBtn.TextColor3 = THEME.accentLight end
+    if ActiveTab then setTabActive(ActiveTab) end
+    notify("Tema atualizado", "Cor de destaque alterada. Componentes novos já usam a cor nova; reabra a UI para retintar tudo.", 3.5)
+end
 
 local function showPrompt(text, onYes, onNo)
     UI.promptText.Text = text; UI.promptOverlay.Visible = true
@@ -1396,6 +1467,191 @@ local function newComponentFactory(parent, rootScroll, trackSections)
         return {row = row, swatch = swatch, getColor = function() return currentColor end}
     end
 
+    local function addProgressBar(options)
+        local minV, maxV = options.min or 0, options.max or 100
+        local value = math.clamp(options.default or minV, minV, maxV)
+        local row = Instance.new("Frame"); row.Size = UDim2.new(1, 0, 0, 40); row.BackgroundColor3 = THEME.row; row.BorderSizePixel = 0; row.ZIndex = 2; row.LayoutOrder = getNextLayoutOrder(); row.Parent = parent
+        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 6)
+        registerCompactRow(row, 40)
+
+        local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(1, -60, 0, 16); lbl.Position = UDim2.fromOffset(10, 4); lbl.BackgroundTransparency = 1; lbl.Font = FONT_BODY; lbl.TextSize = settings.textSize; lbl.TextColor3 = THEME.text; lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Text = options.label or "Progress"; lbl.ZIndex = 3; lbl.Parent = row
+        local valLbl = Instance.new("TextLabel"); valLbl.Size = UDim2.fromOffset(50, 16); valLbl.Position = UDim2.new(1, -60, 0, 4); valLbl.BackgroundTransparency = 1; valLbl.Font = FONT_MED; valLbl.TextSize = 10; valLbl.TextColor3 = THEME.accentLight; valLbl.TextXAlignment = Enum.TextXAlignment.Right; valLbl.ZIndex = 3; valLbl.Parent = row
+
+        local rail = Instance.new("Frame"); rail.Size = UDim2.new(1, -20, 0, 6); rail.Position = UDim2.fromOffset(10, 26); rail.BackgroundColor3 = THEME.field; rail.BorderSizePixel = 0; rail.ZIndex = 3; rail.Parent = row
+        Instance.new("UICorner", rail).CornerRadius = UDim.new(1, 0)
+        local fill = Instance.new("Frame"); fill.Size = UDim2.new(0, 0, 1, 0); fill.BackgroundColor3 = THEME.accent; fill.BorderSizePixel = 0; fill.ZIndex = 4; fill.Parent = rail
+        Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
+
+        local function apply(v, animate)
+            value = math.clamp(v, minV, maxV)
+            local a = (maxV > minV) and ((value - minV) / (maxV - minV)) or 0
+            valLbl.Text = (options.showPercent ~= false) and (tostring(math.floor(a * 100 + 0.5)) .. "%") or (tostring(value) .. (options.suffix or ""))
+            if animate then
+                TweenService:Create(fill, TweenInfo.new(0.25, Enum.EasingStyle.Quint), {Size = UDim2.new(a, 0, 1, 0)}):Play()
+            else
+                fill.Size = UDim2.new(a, 0, 1, 0)
+            end
+        end
+        apply(value, false)
+
+        local obj = {row = row}
+        function obj:Set(v, animate) apply(v, animate ~= false) end
+        function obj:Get() return value end
+        return obj
+    end
+
+    local function addCollapsibleSection(options)
+        if type(options) == "string" then options = {name = options} end
+        local open = (options.default == nil) and true or options.default
+
+        local holder = Instance.new("Frame"); holder.Size = UDim2.new(1, 0, 0, 0); holder.AutomaticSize = Enum.AutomaticSize.Y
+        holder.BackgroundTransparency = 1; holder.ZIndex = 2; holder.LayoutOrder = getNextLayoutOrder(); holder.Parent = parent
+        local holderLayout = Instance.new("UIListLayout"); holderLayout.SortOrder = Enum.SortOrder.LayoutOrder; holderLayout.Padding = UDim.new(0, 5); holderLayout.Parent = holder
+
+        local header = Instance.new("TextButton"); header.Size = UDim2.new(1, 0, 0, 28); header.BackgroundColor3 = THEME.row; header.BorderSizePixel = 0
+        header.AutoButtonColor = false; header.Text = ""; header.ZIndex = 2; header.LayoutOrder = 1; header.Parent = holder
+        Instance.new("UICorner", header).CornerRadius = UDim.new(0, 6)
+        registerCompactRow(header, 28)
+        local hLbl = Instance.new("TextLabel"); hLbl.Size = UDim2.new(1, -36, 1, 0); hLbl.Position = UDim2.fromOffset(10, 0); hLbl.BackgroundTransparency = 1; hLbl.Font = FONT_BOLD; hLbl.TextSize = settings.textSize; hLbl.TextColor3 = THEME.text; hLbl.TextXAlignment = Enum.TextXAlignment.Left; hLbl.Text = options.name or "Section"; hLbl.ZIndex = 3; hLbl.Parent = header
+        local chevron = Instance.new("TextLabel"); chevron.Size = UDim2.fromOffset(20, 20); chevron.Position = UDim2.new(1, -28, 0.5, -10); chevron.BackgroundTransparency = 1; chevron.Font = FONT_BOLD; chevron.TextSize = 12; chevron.TextColor3 = THEME.textDim; chevron.Text = "▾"; chevron.Rotation = open and 0 or -90; chevron.ZIndex = 3; chevron.Parent = header
+
+        local body = Instance.new("Frame"); body.Size = UDim2.new(1, 0, 0, 0); body.AutomaticSize = Enum.AutomaticSize.Y
+        body.BackgroundTransparency = 1; body.ClipsDescendants = true; body.Visible = open; body.ZIndex = 2; body.LayoutOrder = 2; body.Parent = holder
+        local bodyLayout = Instance.new("UIListLayout"); bodyLayout.SortOrder = Enum.SortOrder.LayoutOrder; bodyLayout.Padding = UDim.new(0, 5); bodyLayout.Parent = body
+        local bodyPad = Instance.new("UIPadding"); bodyPad.PaddingLeft = UDim.new(0, 10); bodyPad.PaddingTop = UDim.new(0, 2); bodyPad.Parent = body
+
+        header.MouseButton1Click:Connect(function()
+            open = not open
+            TweenService:Create(chevron, TweenInfo.new(0.18), {Rotation = open and 0 or -90}):Play()
+            body.Visible = open
+        end)
+
+        local subApi = newComponentFactory(body, rootScroll, false)
+        subApi.SetOpen = function(v) open = v; body.Visible = v; chevron.Rotation = v and 0 or -90 end
+        subApi.row = holder
+        return subApi
+    end
+
+    local function addImage(options)
+        local ratio = options.ratio or (16/9)
+        local h = options.height or math.floor((options.width or 240) / ratio)
+        local row = Instance.new("Frame"); row.Size = UDim2.new(1, 0, 0, h + 8); row.BackgroundTransparency = 1; row.ZIndex = 2; row.LayoutOrder = getNextLayoutOrder(); row.Parent = parent
+
+        local frame = Instance.new("Frame"); frame.Size = UDim2.new(1, 0, 0, h); frame.Position = UDim2.fromOffset(0, 4); frame.BackgroundColor3 = THEME.field; frame.BorderSizePixel = 0; frame.ClipsDescendants = true; frame.ZIndex = 2; frame.Parent = row
+        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, options.cornerRadius or 8)
+
+        local img = Instance.new("ImageLabel"); img.Size = UDim2.new(1, 0, 1, 0); img.BackgroundTransparency = 1
+        img.ScaleType = options.scaleType or Enum.ScaleType.Crop; img.ZIndex = 3; img.Parent = frame
+
+        local loadingLbl = Instance.new("TextLabel"); loadingLbl.Size = UDim2.new(1, 0, 1, 0); loadingLbl.BackgroundTransparency = 1
+        loadingLbl.Font = FONT_BODY; loadingLbl.TextSize = 10; loadingLbl.TextColor3 = THEME.textFaint; loadingLbl.Text = "Loading image..."; loadingLbl.ZIndex = 3; loadingLbl.Parent = frame
+
+        task.spawn(function()
+            local resolved = resolveMediaAsset(options.image or options.url, "image")
+            if resolved then
+                img.Image = resolved
+                loadingLbl.Visible = false
+            else
+                loadingLbl.Text = "Failed to load image"
+            end
+        end)
+
+        return {row = row, frame = frame, image = img}
+    end
+
+    local function addVideo(options)
+        local h = options.height or 150
+        local row = Instance.new("Frame"); row.Size = UDim2.new(1, 0, 0, h + 40); row.BackgroundColor3 = THEME.row; row.BorderSizePixel = 0; row.ZIndex = 2; row.LayoutOrder = getNextLayoutOrder(); row.Parent = parent
+        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
+
+        local frame = Instance.new("Frame"); frame.Size = UDim2.new(1, -12, 0, h); frame.Position = UDim2.fromOffset(6, 6); frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0); frame.BorderSizePixel = 0; frame.ClipsDescendants = true; frame.ZIndex = 2; frame.Parent = row
+        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+
+        local vid = Instance.new("VideoFrame"); vid.Size = UDim2.new(1, 0, 1, 0); vid.BackgroundTransparency = 1
+        vid.Looped = options.loop or false; vid.ZIndex = 3; vid.Parent = frame
+
+        local loadingLbl = Instance.new("TextLabel"); loadingLbl.Size = UDim2.new(1, 0, 1, 0); loadingLbl.BackgroundTransparency = 1
+        loadingLbl.Font = FONT_BODY; loadingLbl.TextSize = 10; loadingLbl.TextColor3 = THEME.textFaint; loadingLbl.Text = "Loading video..."; loadingLbl.ZIndex = 4; loadingLbl.Parent = frame
+
+        local bar = Instance.new("Frame"); bar.Size = UDim2.new(1, -12, 0, 26); bar.Position = UDim2.fromOffset(6, h + 8); bar.BackgroundTransparency = 1; bar.ZIndex = 2; bar.Parent = row
+        local playBtn = Instance.new("TextButton"); playBtn.Size = UDim2.fromOffset(26, 22); playBtn.BackgroundColor3 = THEME.field; playBtn.BorderSizePixel = 0
+        playBtn.Font = FONT_BOLD; playBtn.TextSize = 10; playBtn.TextColor3 = THEME.text; playBtn.Text = "▶"; playBtn.AutoButtonColor = false; playBtn.ZIndex = 3; playBtn.Parent = bar
+        Instance.new("UICorner", playBtn).CornerRadius = UDim.new(0, 4)
+        local track = Instance.new("Frame"); track.Size = UDim2.new(1, -70, 0, 4); track.Position = UDim2.new(0, 34, 0.5, -2); track.BackgroundColor3 = THEME.field; track.BorderSizePixel = 0; track.ZIndex = 3; track.Parent = bar
+        Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
+        local prog = Instance.new("Frame"); prog.Size = UDim2.new(0, 0, 1, 0); prog.BackgroundColor3 = THEME.accent; prog.BorderSizePixel = 0; prog.ZIndex = 4; prog.Parent = track
+        Instance.new("UICorner", prog).CornerRadius = UDim.new(1, 0)
+        local timeLbl = Instance.new("TextLabel"); timeLbl.Size = UDim2.fromOffset(30, 22); timeLbl.Position = UDim2.new(1, -30, 0, 0); timeLbl.BackgroundTransparency = 1
+        timeLbl.Font = FONT_BODY; timeLbl.TextSize = 8; timeLbl.TextColor3 = THEME.textDim; timeLbl.Text = "0:00"; timeLbl.ZIndex = 3; timeLbl.Parent = bar
+
+        playBtn.MouseButton1Click:Connect(function()
+            if vid.IsPlaying then vid:Pause(); playBtn.Text = "▶" else vid:Play(); playBtn.Text = "❚❚" end
+        end)
+        RunService.Heartbeat:Connect(function()
+            if vid.Parent and vid.TimeLength > 0 then
+                prog.Size = UDim2.new(vid.TimePosition / vid.TimeLength, 0, 1, 0)
+                timeLbl.Text = string.format("%d:%02d", math.floor(vid.TimePosition / 60), math.floor(vid.TimePosition % 60))
+            end
+        end)
+
+        task.spawn(function()
+            local resolved = resolveMediaAsset(options.video or options.url, "video")
+            if resolved then
+                vid.Video = resolved
+                loadingLbl.Visible = false
+                if options.autoPlay then vid:Play(); playBtn.Text = "❚❚" end
+            else
+                loadingLbl.Text = "Failed to load video"
+            end
+        end)
+
+        return {row = row, video = vid, play = function() vid:Play() end, pause = function() vid:Pause() end}
+    end
+
+    local function addAudio(options)
+        local row = Instance.new("Frame"); row.Size = UDim2.new(1, 0, 0, 44); row.BackgroundColor3 = THEME.row; row.BorderSizePixel = 0; row.ZIndex = 2; row.LayoutOrder = getNextLayoutOrder(); row.Parent = parent
+        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 6)
+        registerCompactRow(row, 44)
+
+        local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(1, -20, 0, 16); lbl.Position = UDim2.fromOffset(10, 4); lbl.BackgroundTransparency = 1; lbl.Font = FONT_BODY; lbl.TextSize = settings.textSize; lbl.TextColor3 = THEME.text; lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.Text = options.label or "Audio"; lbl.ZIndex = 3; lbl.Parent = row
+
+        local sound = Instance.new("Sound"); sound.Name = "HoneyLuaAudio"; sound.Looped = options.loop or false; sound.Volume = options.volume or 0.5
+        sound.Parent = (options.workspace and workspace) or SoundService
+
+        local playBtn = Instance.new("TextButton"); playBtn.Size = UDim2.fromOffset(22, 20); playBtn.Position = UDim2.fromOffset(10, 22); playBtn.BackgroundColor3 = THEME.field; playBtn.BorderSizePixel = 0
+        playBtn.Font = FONT_BOLD; playBtn.TextSize = 9; playBtn.TextColor3 = THEME.text; playBtn.Text = "▶"; playBtn.AutoButtonColor = false; playBtn.ZIndex = 3; playBtn.Parent = row
+        Instance.new("UICorner", playBtn).CornerRadius = UDim.new(0, 4)
+        local restartBtn = Instance.new("TextButton"); restartBtn.Size = UDim2.fromOffset(22, 20); restartBtn.Position = UDim2.fromOffset(36, 22); restartBtn.BackgroundColor3 = THEME.field; restartBtn.BorderSizePixel = 0
+        restartBtn.Font = FONT_BOLD; restartBtn.TextSize = 9; restartBtn.TextColor3 = THEME.text; restartBtn.Text = "↺"; restartBtn.AutoButtonColor = false; restartBtn.ZIndex = 3; restartBtn.Parent = row
+        Instance.new("UICorner", restartBtn).CornerRadius = UDim.new(0, 4)
+        local track = Instance.new("Frame"); track.Size = UDim2.new(1, -110, 0, 4); track.Position = UDim2.new(0, 66, 0, 32); track.BackgroundColor3 = THEME.field; track.BorderSizePixel = 0; track.ZIndex = 3; track.Parent = row
+        Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
+        local prog = Instance.new("Frame"); prog.Size = UDim2.new(0, 0, 1, 0); prog.BackgroundColor3 = THEME.accent; prog.BorderSizePixel = 0; prog.ZIndex = 4; prog.Parent = track
+        Instance.new("UICorner", prog).CornerRadius = UDim.new(1, 0)
+
+        playBtn.MouseButton1Click:Connect(function()
+            if sound.IsPlaying then sound:Pause(); playBtn.Text = "▶" else sound:Play(); playBtn.Text = "❚❚" end
+        end)
+        restartBtn.MouseButton1Click:Connect(function() sound.TimePosition = 0; sound:Play(); playBtn.Text = "❚❚" end)
+        RunService.Heartbeat:Connect(function()
+            if sound.Parent and sound.TimeLength > 0 then
+                prog.Size = UDim2.new(sound.TimePosition / sound.TimeLength, 0, 1, 0)
+            end
+        end)
+
+        task.spawn(function()
+            local resolved = resolveMediaAsset(options.audio or options.url, "audio")
+            if resolved then
+                sound.SoundId = resolved
+                if options.autoPlay then sound:Play(); playBtn.Text = "❚❚" end
+            else
+                lbl.Text = (options.label or "Audio") .. " (failed to load)"
+            end
+        end)
+
+        return {row = row, sound = sound, play = function() sound:Play() end, pause = function() sound:Pause() end, restart = function() sound.TimePosition = 0; sound:Play() end}
+    end
+
     local function addSubTabs(names)
         local wrapper = Instance.new("Frame"); wrapper.Size = UDim2.new(1, 0, 0, 0); wrapper.AutomaticSize = Enum.AutomaticSize.Y
         wrapper.BackgroundTransparency = 1; wrapper.ZIndex = 2; wrapper.LayoutOrder = getNextLayoutOrder(); wrapper.Parent = parent
@@ -1446,6 +1702,11 @@ local function newComponentFactory(parent, rootScroll, trackSections)
     api.AddKeybind = addKeybind
     api.AddText = addText
     api.AddSubTabs = addSubTabs
+    api.AddProgressBar = addProgressBar
+    api.AddCollapsibleSection = addCollapsibleSection
+    api.AddImage = addImage
+    api.AddVideo = addVideo
+    api.AddAudio = addAudio
     api.Container = parent
     api.getNextLayoutOrder = getNextLayoutOrder
     return api
@@ -1601,6 +1862,36 @@ local function buildSettingsTab(tabApi)
 
     tabApi.AddSection("Visuals")
 
+    tabApi.AddColorPicker({
+        id = "theme_accent_color", label = "Cor de Destaque", default = hexToColor(settings.accentColor),
+        onChange = function(c) applyAccentColor(colorToHex(c)) end
+    })
+    tabApi.AddSlider({
+        id = "ui_scale_slider", label = "Escala da UI", min = 80, max = 130, step = 5, default = math.floor((settings.uiScale or 1) * 100),
+        onChange = function(v)
+            settings.uiScale = v / 100
+            if UI.uiScale then TweenService:Create(UI.uiScale, TweenInfo.new(0.12), {Scale = v / 100}):Play() end
+            writeSettings(settings)
+        end
+    })
+    tabApi.AddSlider({
+        id = "blur_intensity_slider", label = "Intensidade do Blur", min = 10, max = 70, step = 5, default = math.floor((settings.transparencyAmount or 0.4) * 100),
+        onChange = function(v)
+            settings.transparencyAmount = v / 100
+            writeSettings(settings)
+            if settings.transparent then applyTransparency(true) end
+        end
+    })
+    tabApi.AddButton({
+        id = "reset_theme_btn", label = "Resetar Tema",
+        onClick = function()
+            applyAccentColor("B2223C")
+            settings.uiScale = 1
+            if UI.uiScale then TweenService:Create(UI.uiScale, TweenInfo.new(0.15), {Scale = 1}):Play() end
+            writeSettings(settings)
+            notify("Tema resetado", "Cor e escala voltaram ao padrão.", 2.5)
+        end
+    })
     tabApi.AddToggle({
         id = "acrylic_transparency", label = "Acrylic / Transparency", default = settings.transparent,
         onChange = function(v)
@@ -1651,6 +1942,15 @@ subs["Básico"].AddDropdown({id = "demo_dropdown", label = "Dropdown", items = {
 subs["Avançado"].AddColorPicker({id = "demo_color", label = "Cor Principal", default = Color3.fromRGB(146, 30, 46), onChange = function(c) end})
 subs["Avançado"].AddInput({id = "demo_input", label = "Input", placeholder = "digite algo..."})
 subs["Avançado"].AddMultiDropdown({id = "demo_multi", label = "Multi Dropdown", items = {"A", "B", "C", "D"}, default = {"A"}})
+
+demoTab.AddSection("Mídia")
+demoTab.AddProgressBar({label = "Carregamento", min = 0, max = 100, default = 42})
+local collapse = demoTab.AddCollapsibleSection({name = "Seção Recolhível", default = true})
+collapse.AddText({text = "Conteúdo dentro da seção recolhível."})
+collapse.AddToggle({id = "demo_collapse_toggle", label = "Toggle interno", default = false})
+-- demoTab.AddImage({image = "rbxassetid://0", height = 120})
+-- demoTab.AddVideo({video = "rbxassetid://0", height = 140, loop = true})
+-- demoTab.AddAudio({label = "Faixa de teste", audio = "rbxassetid://0", loop = false})
 
 ----------------------------------------------------------------
 -- STARTUP
