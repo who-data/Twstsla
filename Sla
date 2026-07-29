@@ -1,4 +1,4 @@
--- Config Manager UI (Executor-ready) — Dark/Wine theme
+-- Config Ma
 if getgenv().HoneyLuaLoaded then return end
 getgenv().HoneyLuaLoaded = true
 
@@ -171,9 +171,9 @@ end
 local function ensureNotifHolder()
     if NotifHolder and NotifHolder.Parent then return NotifHolder end
     local holder = Instance.new("Frame")
-    holder.Name = "NotifHolder"; holder.Size = UDim2.new(0, 260, 0, 0); holder.AutomaticSize = Enum.AutomaticSize.Y
-    holder.Position = UDim2.new(1, -272, 0, 12); holder.AnchorPoint = Vector2.new(0, 0)
-    holder.BackgroundTransparency = 1; holder.Active = false; holder.ZIndex = 1000; holder.Parent = UI.screenGui
+    holder.Name = "NotifHolder"; holder.Size = UDim2.new(0, 240, 0, 0); holder.AutomaticSize = Enum.AutomaticSize.Y
+    holder.Position = UDim2.new(1, -252, 0, 12); holder.AnchorPoint = Vector2.new(0, 0)
+    holder.BackgroundTransparency = 1; holder.Active = false; holder.ClipsDescendants = false; holder.ZIndex = 1000; holder.Parent = UI.screenGui
     local layout = Instance.new("UIListLayout")
     layout.FillDirection = Enum.FillDirection.Vertical; layout.HorizontalAlignment = Enum.HorizontalAlignment.Right
     layout.VerticalAlignment = Enum.VerticalAlignment.Top; layout.Padding = UDim.new(0, 6)
@@ -182,35 +182,48 @@ local function ensureNotifHolder()
     return holder
 end
 
+local ActiveNotifs = {}
+local MAX_NOTIFS = 3
+
 local function notify(title, text, duration, kind)
     if not settings.notifications then return end
-    duration = duration or 3.5
+    duration = duration or 3
+
+    -- never let more than MAX_NOTIFS stack up
+    while #ActiveNotifs >= MAX_NOTIFS do
+        local oldest = table.remove(ActiveNotifs, 1)
+        if oldest and oldest.Parent then oldest:Destroy() end
+    end
+
     local holder = ensureNotifHolder()
     local card = Instance.new("Frame")
     card.Size = UDim2.new(1, 0, 0, 0); card.AutomaticSize = Enum.AutomaticSize.Y
     card.BackgroundColor3 = THEME.row; card.BorderSizePixel = 0; card.ClipsDescendants = true
-    card.Position = UDim2.new(0, 300, 0, 0); card.BackgroundTransparency = 1
-    card.ZIndex = 1001; card.Parent = holder
-    Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8)
+    card.BackgroundTransparency = 1; card.ZIndex = 1001; card.Parent = holder
+    table.insert(ActiveNotifs, card)
+    Instance.new("UICorner", card).CornerRadius = UDim.new(0, 7)
     local accentColor = kind == "error" and THEME.danger or (kind == "success" and THEME.success or THEME.accent)
     local bar = Instance.new("Frame"); bar.Size = UDim2.new(0, 3, 1, 0); bar.BackgroundColor3 = accentColor; bar.BorderSizePixel = 0; bar.ZIndex = 1002; bar.Parent = card
     Instance.new("UICorner", bar).CornerRadius = UDim.new(0, 3)
     local pad = Instance.new("UIPadding")
-    pad.PaddingLeft = UDim.new(0, 14); pad.PaddingRight = UDim.new(0, 10); pad.PaddingTop = UDim.new(0, 8); pad.PaddingBottom = UDim.new(0, 8); pad.Parent = card
-    local vlist = Instance.new("UIListLayout"); vlist.SortOrder = Enum.SortOrder.LayoutOrder; vlist.Padding = UDim.new(0, 2); vlist.Parent = card
+    pad.PaddingLeft = UDim.new(0, 12); pad.PaddingRight = UDim.new(0, 9); pad.PaddingTop = UDim.new(0, 7); pad.PaddingBottom = UDim.new(0, 7); pad.Parent = card
+    local vlist = Instance.new("UIListLayout"); vlist.SortOrder = Enum.SortOrder.LayoutOrder; vlist.Padding = UDim.new(0, 1); vlist.Parent = card
     local t = Instance.new("TextLabel")
-    t.Size = UDim2.new(1, 0, 0, 16); t.BackgroundTransparency = 1; t.Font = FONT_BOLD; t.TextSize = 12
+    t.Size = UDim2.new(1, 0, 0, 14); t.BackgroundTransparency = 1; t.Font = FONT_BOLD; t.TextSize = 11
     t.TextColor3 = THEME.text; t.TextXAlignment = Enum.TextXAlignment.Left; t.Text = title or "Notice"; t.LayoutOrder = 1; t.ZIndex = 1002; t.Parent = card
     local b = Instance.new("TextLabel")
-    b.Size = UDim2.new(1, 0, 0, 0); b.AutomaticSize = Enum.AutomaticSize.Y; b.BackgroundTransparency = 1; b.Font = FONT_BODY; b.TextSize = 11
+    b.Size = UDim2.new(1, 0, 0, 0); b.AutomaticSize = Enum.AutomaticSize.Y; b.BackgroundTransparency = 1; b.Font = FONT_BODY; b.TextSize = 10
     b.TextColor3 = THEME.textDim; b.TextXAlignment = Enum.TextXAlignment.Left; b.TextWrapped = true; b.Text = text or ""; b.LayoutOrder = 2; b.ZIndex = 1002; b.Parent = card
 
-    TweenService:Create(card, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 0}):Play()
+    -- simple fade in/out (a Position slide fights UIListLayout, which repositions children every frame)
+    TweenService:Create(card, TweenInfo.new(0.2), {BackgroundTransparency = 0}):Play()
     task.delay(duration, function()
         if card and card.Parent then
-            local tw = TweenService:Create(card, TweenInfo.new(0.2), {Position = UDim2.new(0, 300, 0, 0), BackgroundTransparency = 1})
+            local idx = table.find(ActiveNotifs, card)
+            if idx then table.remove(ActiveNotifs, idx) end
+            local tw = TweenService:Create(card, TweenInfo.new(0.2), {BackgroundTransparency = 1})
             tw:Play()
-            tw.Completed:Connect(function() card:Destroy() end)
+            tw.Completed:Connect(function() if card then card:Destroy() end end)
         end
     end)
 end
@@ -226,7 +239,7 @@ local function captureControlValues()
 end
 
 local function createConfig(n) currentConfigName = n; configData = {}; writeConfig(currentConfigName, configData); syncSettings(); applyConfigToControls(); updateStatus("Created: " .. currentConfigName); notify("Config criada", currentConfigName, 2.5, "success") end
-local function saveConfig() configData = captureControlValues(); writeConfig(currentConfigName, configData); syncSettings(); updateStatus("Saved: " .. currentConfigName); notify("Config salva", currentConfigName, 2.5, "success") end
+local function saveConfig(silent) configData = captureControlValues(); writeConfig(currentConfigName, configData); syncSettings(); updateStatus("Saved: " .. currentConfigName); if not silent then notify("Config salva", currentConfigName, 2.5, "success") end end
 local function loadConfig(n) currentConfigName = n; configData = readConfig(currentConfigName); syncSettings(); applyConfigToControls(); updateStatus("Loaded: " .. currentConfigName); notify("Config carregada", currentConfigName, 2.5) end
 local function resetCurrentConfig() configData = resetConfig(currentConfigName); applyConfigToControls(); updateStatus("Reset: " .. currentConfigName); notify("Config resetada", currentConfigName, 2.5) end
 local function toggleAuto(key) settings[key] = not settings[key]; writeSettings(settings) end
@@ -1649,7 +1662,7 @@ if settings.autoSave then
     task.spawn(function()
         while UI and UI.screenGui and UI.screenGui.Parent do
             task.wait(settings.autoSaveInterval or 30)
-            if settings.autoSave then saveConfig() end
+            if settings.autoSave then saveConfig(true) end
         end
     end)
 end
